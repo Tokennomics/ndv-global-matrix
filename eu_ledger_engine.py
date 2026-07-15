@@ -4,7 +4,8 @@ Net Domestic Value (NDV) European Sovereign Ledger Engine
 Author: Senior Economic Researcher and Lead Systems Engineer
 Version: 3.0: Total Project Recovery
 
-This module implements the EU Sovereign Ingestion and Cohesion Matrix calculations.
+This module implements the EU Sovereign Ingestion and Cohesion Matrix calculations
+using a modular architecture based on first-principles kernel design.
 It computes the NDV for the 27 EU Member States and applies Cohesion Policy 2.0
 transfer mechanisms.
 """
@@ -14,6 +15,7 @@ import urllib.request
 import csv
 import logging
 from typing import List, Dict
+from dataclasses import dataclass
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("NDV_EU")
@@ -24,6 +26,18 @@ EU_ISO2 = [
     "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", 
     "PL", "PT", "RO", "SK", "SI", "ES", "SE"
 ]
+
+@dataclass
+class FirstPrinciplesConstants:
+    """
+    The 'Kernel' Constants. These are the First Principles that govern the NDV calculation.
+    They are central and immutable for the system, though tunable by protocol governance.
+    """
+    SAFE_PM25_THRESHOLD: float = 5.0      # WHO Standard
+    SOCIAL_COST_OF_PM25: float = 1250.00   # USD per unit of excess PM2.5 per 1k population
+    CARE_ECONOMY_SHADOW_WAGE: float = 25.00 # Median EU Hourly Wage Proxy
+    GINI_THRESHOLD: float = 0.32          # EU Target Gini
+    GINI_DRAG_MULTIPLIER: float = 0.30 
 
 # High-fidelity fallback data in case World Bank API times out or is unreachable
 FALLBACK_EU_DATA = {
@@ -56,19 +70,75 @@ FALLBACK_EU_DATA = {
     "MT": {"Country_Name": "Malta", "GDP_USD": 1.80e10, "Population": 530000, "Gini": 31.1, "PM25": 12.0}
 }
 
-class EU_NDV_Engine:
+class NDV_Kernel:
     """
-    Calculates the Net Domestic Value for the EU, applying the Cohesion Transfer 
-    from Industrial Hubs to Natural Sinks.
+    The Base Kernel for the Tokennomics Protocol.
+    Strictly enforces: NDV = Y - Dp - Dn + E+ - E-
+    """
+    def __init__(self, constants: FirstPrinciplesConstants):
+        self.c = constants
+
+    def calculate_ndv(self, raw_data: Dict) -> Dict:
+        # Extract base indicators
+        y = raw_data.get("GDP_USD", 0)
+        pop = raw_data.get("Population", 10_000_000)
+        
+        # 1. PILLAR: Macro-Financial (Depreciation)
+        dp = y * 0.04  # 4% standard industrial depreciation
+        
+        # 2. PILLAR: Biosphere (Depletion)
+        protected_ha = raw_data.get("Protected_Ha", 1000)
+        dn = (protected_ha * 0.1) * 75000 
+        
+        # 3. PILLAR: Societal Dividends (E+)
+        care_hours = pop * 800
+        e_plus = care_hours * self.c.CARE_ECONOMY_SHADOW_WAGE
+        
+        # 4. PILLAR: Societal Debts (E-)
+        # Smog Debt
+        pm25 = raw_data.get("PM25", 5.0)
+        smog_debt = 0
+        if pm25 > self.c.SAFE_PM25_THRESHOLD:
+            smog_debt = (pm25 - self.c.SAFE_PM25_THRESHOLD) * self.c.SOCIAL_COST_OF_PM25 * (pop / 1000)
+            
+        # Inequality Drag (World Bank Gini values are on 0-100 scale, so convert if needed)
+        gini_raw = raw_data.get("Gini", 32.0)
+        gini = gini_raw / 100.0 if gini_raw > 1.0 else gini_raw
+        
+        gini_drag = 0
+        if gini > self.c.GINI_THRESHOLD:
+            gini_drag = y * (gini - self.c.GINI_THRESHOLD) * self.c.GINI_DRAG_MULTIPLIER
+            
+        e_minus = smog_debt + gini_drag
+        
+        # MASTER EQUATION
+        ndv = y - dp - dn + e_plus - e_minus
+        
+        return {
+            "NDV_raw": ndv,
+            "Y_Gross": y,
+            "E_Plus": e_plus,
+            "E_Minus": -e_minus,
+            "Nature_Dn": -dn,
+            "Protected_Ha": protected_ha
+        }
+
+class EU_NDV_Protocol:
+    """
+    The Protocol Layer. Manages the orchestration of data and 
+    the redistribution equilibrium.
     """
     def __init__(self):
-        self.raw_data = {iso: {"ISO2": iso} for iso in EU_ISO2}
-        # Populate with base fallback data first
+        self.constants = FirstPrinciplesConstants()
+        self.kernel = NDV_Kernel(self.constants)
+        self.ledger = {iso: {"ISO2": iso} for iso in EU_ISO2}
+        
+        # Pre-populate defaults
         for iso, data in FALLBACK_EU_DATA.items():
-            self.raw_data[iso].update(data)
+            self.ledger[iso].update(data)
 
-    def fetch_data(self):
-        """Fetches GDP, Population, Gini, and PM2.5 from World Bank. Falls back to static values if API fails."""
+    def run_ingestion(self):
+        """Fetches live datasets from the World Bank API with robust fallbacks."""
         indicators = {
             "NY.GDP.MKTP.CD": "GDP_USD",
             "SP.POP.TOTL": "Population",
@@ -76,97 +146,73 @@ class EU_NDV_Engine:
             "EN.ATM.PM25.MC.M3": "PM25"
         }
         
-        logger.info("Querying World Bank API for EU sovereign datasets...")
+        logger.info("Kernel Ingesting State Data from World Bank API...")
         for code, key in indicators.items():
             url = f"http://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date=2022&per_page=300"
             try:
-                # Add a short timeout to prevent hanging the system
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=5) as response:
                     data = json.loads(response.read().decode('utf-8'))
                     if len(data) > 1 and data[1] is not None:
                         for entry in data[1]:
                             iso2 = entry['country']['id']
-                            if iso2 in self.raw_data:
+                            if iso2 in self.ledger:
                                 val = entry['value']
                                 if val is not None:
-                                    self.raw_data[iso2][key] = val
-                                    self.raw_data[iso2]["Country_Name"] = entry['country']['value']
+                                    self.ledger[iso2][key] = val
+                                    self.ledger[iso2]["Country_Name"] = entry['country']['value']
             except Exception as e:
                 logger.warning(f"Could not fetch indicator {code}: {e}. Retaining robust fallback values.")
 
-    def compute_matrix(self) -> List[Dict]:
-        ledger = []
-        for iso, data in self.raw_data.items():
-            # Retrieve or default
-            pop = data.get("Population") or 10_000_000
-            gdp = data.get("GDP_USD") or (pop * 40000)
-            gini = (data.get("Gini") or 32.0) / 100.0
-            
-            # Archetype Classification (Industrial vs Natural)
+    def compute(self):
+        """Runs the NDV calculations and Cohesion transfers across nodes."""
+        # Classify and run Kernel
+        for iso, data in self.ledger.items():
+            # Setup archetype and protected area sizes based on GDP per capita
+            gdp = data.get("GDP_USD", 4e11)
+            pop = data.get("Population", 10e6)
             gdp_pc = gdp / pop
-            # Natural Sinks are classified by high air quality (PM2.5 < 10) or lower GDP per capita (Cohesion zones)
-            # Standard GDP/capita threshold for industrial hubs is > 45000 USD
+            
             archetype = "Industrial" if gdp_pc > 45000 else "Natural"
+            data["Archetype"] = archetype
+            data["Protected_Ha"] = 15000 if archetype == "Natural" else 1500
             
-            # Stacked Natural Capital Valuation
-            protected_ha = 10000 if archetype == "Natural" else 1000
+            results = self.kernel.calculate_ndv(data)
+            self.ledger[iso].update(results)
             
-            # Master Equation Logic
-            # NDV = Y - Dp - Dn + E+ - E-
-            y = gdp
-            dp = y * 0.05
-            dn = protected_ha * 5000  # Natural capital depletion/preservation cost proxy
-            care_e_plus = pop * 800 * 25  # Unpaid care hours * shadow wage
-            smog_debt = max(0, data.get("PM25", 10) - 5.0) * 1000 * (pop / 1000)
-            
-            ndv_raw = y - dp - dn + care_e_plus - smog_debt
-            
-            # Calculate NDV to GDP ratio percentage
-            ndv_to_gdp = (ndv_raw / y) * 100.0 if y > 0 else 0.0
-            
-            ledger.append({
-                "Country_Name": data.get("Country_Name", iso),
-                "ISO2": iso,
-                "Archetype": archetype,
-                "GDP_USD": y,
-                "NDV": ndv_raw,
-                "NDV_to_GDP": ndv_to_gdp,
-                "Nature_Dn": -dn,
-                "Protected_Ha": protected_ha,
-                "Transfer_Flow": 0.0
-            })
+        # Apply Cohesion Equilibrium (10% Tax on Industrial depletion redistributed to Natural sinks)
+        total_tax_pool = sum(abs(r.get("Nature_Dn", 0)) for r in self.ledger.values() if r.get("Archetype") == "Industrial") * 0.10
+        natural_sinks_count = sum(1 for r in self.ledger.values() if r.get("Archetype") == "Natural")
         
-        # Apply Cohesion Transfer: 5% Tax on Industrial depletion (Nature_Dn) redistributed to Natural Sinks
-        industrial_pool = sum(abs(r['Nature_Dn']) for r in ledger if r['Archetype'] == 'Industrial') * 0.05
-        natural_sinks = sum(r['Protected_Ha'] for r in ledger if r['Archetype'] == 'Natural')
-        
-        for r in ledger:
-            if r['Archetype'] == 'Industrial':
-                tax = abs(r['Nature_Dn']) * 0.05
-                r['Transfer_Flow'] = -tax
-                r['NDV'] -= tax
+        for iso, r in self.ledger.items():
+            if r.get("Archetype") == "Industrial":
+                tax = abs(r.get("Nature_Dn", 0)) * 0.10
+                r["NDV"] = r["NDV_raw"] - tax
+                r["Equilibrium_Transfer"] = -tax
             else:
-                payout = industrial_pool * (r['Protected_Ha'] / natural_sinks) if natural_sinks > 0 else 0.0
-                r['Transfer_Flow'] = payout
-                r['NDV'] += payout
+                payout = (total_tax_pool / natural_sinks_count) if natural_sinks_count > 0 else 0.0
+                r["NDV"] = r["NDV_raw"] + payout
+                r["Equilibrium_Transfer"] = payout
             
-            # Update ratio after Cohesion Transfers
-            r['NDV_to_GDP'] = (r['NDV'] / r['GDP_USD']) * 100.0 if r['GDP_USD'] > 0 else 0.0
-                
-        return sorted(ledger, key=lambda x: x['NDV'], reverse=True)
+            # Recalculate final NDV to GDP ratio percentage
+            r["NDV_to_GDP"] = (r["NDV"] / r["Y_Gross"]) * 100.0 if r["Y_Gross"] > 0 else 0.0
 
     def export(self, filename="ndv_eu_ledger.csv"):
-        data = self.compute_matrix()
-        # Export keys matching the user requirements and adding supporting indicators
-        keys = ["Country_Name", "GDP_USD", "NDV", "NDV_to_GDP", "Transfer_Flow", "Archetype"]
+        logger.info("Exporting Immutable Sovereign Ledger...")
+        keys = ["Country_Name", "GDP_USD", "NDV", "NDV_to_GDP", "Equilibrium_Transfer", "Archetype"]
+        
+        # Sort by final NDV descending
+        sorted_ledger = sorted(self.ledger.values(), key=lambda x: x.get('NDV', 0), reverse=True)
+        
         with open(filename, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=keys, extrasaction='ignore')
             writer.writeheader()
-            writer.writerows(data)
+            writer.writerows(sorted_ledger)
         logger.info(f"Exported EU Ledger to {filename}")
 
 if __name__ == "__main__":
-    engine = EU_NDV_Engine()
-    engine.fetch_data()
-    engine.export()
+    protocol = EU_NDV_Protocol()
+    protocol.run_ingestion()
+    protocol.compute()
+    protocol.export()
+    logger.info("Protocol Kernel execution successful.")
