@@ -910,6 +910,24 @@ Malta,1800000000.0,13363636363.63,742.42,136363636.36,Natural`;
 
             processRawCSVData(defaultCSV);
         }
+
+        // Autoload global_sovereign_ledger.csv on startup
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch('global_sovereign_ledger.csv')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    processRawCSVData(text);
+                })
+                .catch(error => {
+                    console.warn("Could not fetch global_sovereign_ledger.csv (likely local file CORS or missing file). Loading mock EU dataset.", error);
+                    loadDefaultEULedger();
+                });
+        });
     </script>
 </body>
 </html>
