@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokennomics EU Sovereign Terminal</title>
+    
+    <!-- SEO Optimization -->
+    <meta name="description" content="Sovereign Terminal for tracking Net Domestic Value (NDV) and Cohesion Policy 2.0 algorithmic transfers across the European Union.">
+    
+    <!-- Typography and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Inline CSS for styling and performance -->
+    <style>
+        :root {
+            --bg-obsidian: #080c14;
+            --bg-card: rgba(16, 22, 38, 0.75);
+            --border-glow: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(59, 130, 246, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --color-emerald: #10b981;
+            --color-emerald-glow: rgba(16, 185, 129, 0.15);
+            --color-crimson: #ef4444;
+            --color-crimson-glow: rgba(239, 68, 68, 0.15);
+            --color-neon-blue: #3b82f6;
+            --color-gold: #f59e0b;
+            --shadow-premium: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-obsidian);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.03) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        header {
+            max-width: 1400px;
+            margin: 0 auto 2.5rem auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glow);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-title-container h1 {
+            font-weight: 800;
+            font-size: 2.2rem;
+            letter-spacing: -0.05em;
+            background: linear-gradient(135deg, #f8fafc 40%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge-terminal {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--color-neon-blue);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            text-transform: uppercase;
+        }
+
+        .header-title-container p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Top-level Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card-premium {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: var(--shadow-premium);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-premium:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+        }
+
+        .card-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--color-neon-blue);
+        }
+
+        .card-premium.cohesion-dividend::before {
+            background: var(--color-emerald);
+        }
+
+        .card-premium.depletion-tax::before {
+            background: var(--color-crimson);
+        }
+
+        .card-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-top: 0.75rem;
+            letter-spacing: -0.03em;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .card-value.emerald {
+            color: var(--color-emerald);
+            text-shadow: 0 0 15px var(--color-emerald-glow);
+        }
+
+        .card-subtext {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Ingestion Zone */
+        .dropzone-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+
+        .dropzone {
+            background: rgba(16, 22, 38, 0.4);
+            border: 2px dashed rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            min-height: 240px;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--color-neon-blue);
+            background: rgba(59, 130, 246, 0.04);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+
+        .dropzone svg {
+            color: var(--color-neon-blue);
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .dropzone:hover svg {
+            transform: translateY(-6px);
+        }
+
+        .dropzone h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .dropzone p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .dropzone-help {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glow);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            background: var(--color-neon-blue);
+            border-color: var(--color-neon-blue);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Description / Help Card */
+        .archetype-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .archetype-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .archetype-badge-info {
+            padding: 1rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .archetype-badge-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .archetype-badge-info p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Interactive Visualization Section */
+        .terminal-grid {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 2rem;
+        }
+
+        /* Sovereign Ledger Table Card */
+        .ledger-card {
+            grid-column: span 2;
+        }
+
+        .ledger-table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        .ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .ledger-table th {
+            padding: 1rem;
+            border-bottom: 1.5px solid var(--border-glow);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .ledger-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-glow);
+            vertical-align: middle;
+        }
+
+        .ledger-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .ledger-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        /* Badges */
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-industrial {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--color-gold);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-natural {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--color-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-payout {
+            background: var(--color-emerald-glow);
+            color: var(--color-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-tax {
+            background: var(--color-crimson-glow);
+            color: var(--color-crimson);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* SVG Dynamic Chart Component */
+        .chart-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        .chart-bars-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .chart-bar-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .chart-bar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+
+        .chart-bar-wrapper {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 100px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            border-radius: 100px;
+            transition: width 1s ease-out;
+            background: linear-gradient(90deg, var(--color-neon-blue), #60a5fa);
+        }
+
+        .chart-bar-fill.natural {
+            background: linear-gradient(90deg, var(--color-emerald), #34d399);
+        }
+
+        .chart-bar-fill.industrial {
+            background: linear-gradient(90deg, var(--color-gold), #fbbf24);
+        }
+
+        /* Cohesion Transfer Matrix Viz */
+        .matrix-connector-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .transfer-flow-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .transfer-flow-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.85rem;
+        }
+
+        .transfer-flow-item.tax {
+            border-left: 4px solid var(--color-crimson);
+        }
+
+        .transfer-flow-item.payout {
+            border-left: 4px solid var(--color-emerald);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            color: rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header id="main-header">
+        <div class="header-title-container">
+            <h1>Tokennomics EU Sovereign Terminal <span class="badge-terminal">Version 3.0</span></h1>
+            <p>Algorithmic Cohesion Framework and Net Domestic Value Accounting Engine</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-action" onclick="loadDefaultEULedger()">Load Simulated EU Ledger</button>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- Summary Dashboard (Summed Cohesion Dividend Payout Card Added) -->
+        <div class="summary-grid" id="summary-cards">
+            <div class="card-premium cohesion-dividend">
+                <div class="card-label">
+                    <span>Total Cohesion Dividend Payout</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="card-value emerald" id="total-cohesion-val">$0.00</div>
+                <div class="card-subtext">Sum of all positive preservation flows to Natural Sinks</div>
+            </div>
+            
+            <div class="card-premium">
+                <div class="card-label">
+                    <span>Total Depletion Taxes Levied</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="card-value" style="color: var(--color-gold);" id="total-tax-val">$0.00</div>
+                <div class="card-subtext">5% tax levied on industrial ecosystem depletion</div>
+            </div>
+
+            <div class="card-premium">
+                <div class="card-label">
+                    <span>Active EU Sovereigns</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+                <div class="card-value" id="active-countries-val">0</div>
+                <div class="card-subtext" id="archetype-ratio-subtext">Industrial vs. Natural Archetypes</div>
+            </div>
+        </div>
+
+        <!-- File Ingestion Section -->
+        <div class="dropzone-container">
+            <div class="card-premium" style="padding: 0; display: flex; flex-direction: column;">
+                <div id="drop-zone" class="dropzone" style="flex: 1;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h3>Ingest Sovereign Ledger</h3>
+                    <p>Drag & drop <strong>ndv_eu_ledger.csv</strong> or click to browse</p>
+                    <input type="file" id="file-input" accept=".csv" style="display: none;">
+                    <div class="dropzone-help">
+                        <span class="badge-terminal">CSV SUPPORTED</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-premium archetype-info">
+                <div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Sovereign Archetypes & Cohesion 2.0</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">
+                        To counter the geographical resource concentration, Cohesion 2.0 levies a 5% ecological depletion tax on major industrial sectors. This aggregated capital pool is directly transferred to ecological preservation zones ("Natural Sinks") to support biosphere maintenance.
+                    </p>
+                </div>
+                <div class="archetype-grid">
+                    <div class="archetype-badge-info">
+                        <h4><span class="badge-pill badge-industrial">■</span> Industrial Hubs</h4>
+                        <p>GDP/Capita > $45k. High ecological footprints. Pays the 5% Depletion Tax to the Cohesion Pool.</p>
+                    </div>
+                    <div class="archetype-badge-info">
+                        <h4><span class="badge-pill badge-natural">■</span> Natural Sinks</h4>
+                        <p>GDP/Capita <= $45k. Serves as environmental reserves. Receives payouts from the Cohesion Pool.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Panels (Visualizations) -->
+        <div class="terminal-grid" id="main-dashboard-panels" style="display: none;">
+            
+            <!-- Comparison bar Chart -->
+            <div class="card-premium chart-box">
+                <h3 style="font-size: 1.1rem; font-weight: 700;">Net Domestic Value (NDV) vs GDP</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">NDV relative to standard GDP outputs, highlighting Cohesion transfers</p>
+                <div class="chart-bars-container" id="chart-bars">
+                    <!-- Dynamic Bars go here -->
+                </div>
+            </div>
+
+            <!-- Transfer flows Visualizer -->
+            <div class="card-premium matrix-connector-card">
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 700;">Cohesion Transfer Ledger</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">Algorithmic transfers (Depletion Tax vs Cohesion Payouts)</p>
+                </div>
+                <div class="transfer-flow-list" id="transfer-flows">
+                    <!-- Dynamic Flows go here -->
+                </div>
+            </div>
+
+            <!-- Sovereign Ledger Table -->
+            <div class="card-premium ledger-card">
+                <h3 style="font-size: 1.25rem; font-weight: 700;">Sovereign Ledger Directory</h3>
+                <div class="ledger-table-container">
+                    <table class="ledger-table" id="ledger-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Country</th>
+                                <th>Archetype</th>
+                                <th style="text-align: right;">Gross Output (GDP)</th>
+                                <th style="text-align: right;">Net Domestic Value (NDV)</th>
+                                <th style="text-align: right;">NDV / GDP Ratio</th>
+                                <th style="text-align: right;">Transfer Flow</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-table-body">
+                            <!-- Dynamic Table Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Empty State Dashboard -->
+        <div class="card-premium empty-state" id="empty-dashboard-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            <h3>Sovereign Terminal Uninitialized</h3>
+            <p style="margin-top: 0.5rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+                Please drag and drop your exported <strong>ndv_eu_ledger.csv</strong> or click the "Load Simulated EU Ledger" button to populate the sovereign matrix.
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Interactive script Logic (app.js inline) -->
+    <script>
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const emptyState = document.getElementById('empty-dashboard-state');
+        const dashboardPanels = document.getElementById('main-dashboard-panels');
+        const ledgerTableBody = document.getElementById('ledger-table-body');
+        const chartBarsContainer = document.getElementById('chart-bars');
+        const transferFlowsContainer = document.getElementById('transfer-flows');
+        
+        // Summary Card elements
+        const totalCohesionVal = document.getElementById('total-cohesion-val');
+        const totalTaxVal = document.getElementById('total-tax-val');
+        const activeCountriesVal = document.getElementById('active-countries-val');
+        const archetypeRatioSubtext = document.getElementById('archetype-ratio-subtext');
+
+        // Drag & Drop event listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                parseCSV(files[0]);
+            }
+        });
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                parseCSV(files[0]);
+            }
+        }
+
+        // Standard CSV Parser
+        function parseCSV(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                processRawCSVData(text);
+            };
+            reader.readAsText(file);
+        }
+
+        // Process CSV lines and render interface
+        function processRawCSVData(csvText) {
+            const lines = csvText.split(/\r?\n/);
+            if (lines.length < 2) return;
+
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i]) continue;
+                const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+                if (values.length < headers.length) continue;
+                
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index];
+                });
+                data.push(row);
+            }
+
+            renderDashboard(data);
+        }
+
+        // Map and render dashboards
+        function renderDashboard(data) {
+            // Clean table and visuals
+            ledgerTableBody.innerHTML = '';
+            chartBarsContainer.innerHTML = '';
+            transferFlowsContainer.innerHTML = '';
+
+            let totalCohesion = 0;
+            let totalTaxes = 0;
+            let industrialCount = 0;
+            let naturalCount = 0;
+
+            // Map keys dynamically to handle schema variations (Transfer_Flow / Equilibrium_Transfer)
+            const cleanData = data.map(item => {
+                const country = item.Country_Name || item.country || item.state || 'Unknown';
+                const gdp = parseFloat(item.GDP_USD || item.Y || item.gdp || 0);
+                const ndv = parseFloat(item.NDV || item.NDV_final || item.NDV_raw || 0);
+                
+                // Fetch archetype or calculate
+                let archetype = item.Archetype || item.archetype;
+                if (!archetype) {
+                    // Fallback calc
+                    const gdpPC = gdp / (parseFloat(item.Population || 1e7));
+                    archetype = gdpPC > 45000 ? 'Industrial' : 'Natural';
+                }
+
+                // Transfer flow column mapping
+                const transferVal = parseFloat(item.Transfer_Flow || item.Equilibrium_Transfer || item.sovereign_transfer || item.equilibrium_transfer || 0);
+                
+                // Ratios
+                let ratio = parseFloat(item.NDV_to_GDP || 0);
+                if (!ratio || ratio === 0) {
+                    ratio = gdp > 0 ? (ndv / gdp) * 100 : 0;
+                }
+
+                return {
+                    country,
+                    gdp,
+                    ndv,
+                    archetype,
+                    transfer: transferVal,
+                    ratio: ratio
+                };
+            });
+
+            // Sort by NDV descending
+            cleanData.sort((a, b) => b.ndv - a.ndv);
+
+            // Compute aggregates
+            cleanData.forEach(item => {
+                if (item.transfer > 0) {
+                    totalCohesion += item.transfer;
+                } else if (item.transfer < 0) {
+                    totalTaxes += Math.abs(item.transfer);
+                }
+
+                if (item.archetype.toLowerCase() === 'industrial') {
+                    industrialCount++;
+                } else {
+                    naturalCount++;
+                }
+            });
+
+            // Renders Summary UI elements
+            totalCohesionVal.innerText = formatCurrency(totalCohesion);
+            totalTaxVal.innerText = formatCurrency(totalTaxes);
+            activeCountriesVal.innerText = cleanData.length;
+            archetypeRatioSubtext.innerText = `${industrialCount} Industrial Hubs | ${naturalCount} Natural Sinks`;
+
+            // Render Ledger rows and visuals
+            cleanData.forEach((item, index) => {
+                // 1. Append Table Row
+                const tr = document.createElement('tr');
+                
+                // Style Transfer badges
+                let transferBadgeClass = 'badge-payout';
+                let transferSymbol = '+';
+                if (item.transfer < 0) {
+                    transferBadgeClass = 'badge-tax';
+                    transferSymbol = '';
+                } else if (item.transfer === 0) {
+                    transferBadgeClass = 'badge-industrial';
+                    transferSymbol = '';
+                }
+
+                const archetypeBadge = item.archetype.toLowerCase() === 'industrial' ? 'badge-industrial' : 'badge-natural';
+
+                tr.innerHTML = `
+                    <td class="font-mono text-secondary">${index + 1}</td>
+                    <td style="font-weight: 600;">${item.country}</td>
+                    <td><span class="badge-pill ${archetypeBadge}">${item.archetype}</span></td>
+                    <td style="text-align: right;" class="font-mono">${formatCurrency(item.gdp)}</td>
+                    <td style="text-align: right;" class="font-mono">${formatCurrency(item.ndv)}</td>
+                    <td style="text-align: right; font-weight:600;" class="font-mono text-primary">${item.ratio.toFixed(2)}%</td>
+                    <td style="text-align: right;"><span class="badge-pill ${transferBadgeClass}">${transferSymbol}${formatCurrency(item.transfer)}</span></td>
+                `;
+                ledgerTableBody.appendChild(tr);
+
+                // 2. Append Custom Chart row
+                const barRow = document.createElement('div');
+                barRow.className = 'chart-bar-row';
+                const fillClass = item.archetype.toLowerCase() === 'industrial' ? 'industrial' : 'natural';
+                
+                // Normalise bar widths (using 100% relative scale relative to max GDP or max NDV)
+                const maxVal = Math.max(...cleanData.map(d => d.gdp));
+                const barWidth = maxVal > 0 ? (item.gdp / maxVal) * 100 : 0;
+                
+                barRow.innerHTML = `
+                    <div class="chart-bar-labels">
+                        <span style="font-weight:600;">${item.country}</span>
+                        <span class="font-mono text-secondary">Ratio: ${item.ratio.toFixed(1)}%</span>
+                    </div>
+                    <div class="chart-bar-wrapper">
+                        <div class="chart-bar-fill ${fillClass}" style="width: ${barWidth}%"></div>
+                    </div>
+                `;
+                chartBarsContainer.appendChild(barRow);
+
+                // 3. Append Cohesion flow items
+                if (item.transfer !== 0) {
+                    const flowItem = document.createElement('div');
+                    const isTax = item.transfer < 0;
+                    flowItem.className = `transfer-flow-item ${isTax ? 'tax' : 'payout'}`;
+                    flowItem.innerHTML = `
+                        <span style="font-weight:600;">${item.country}</span>
+                        <div>
+                            <span class="text-secondary" style="margin-right: 0.5rem;">${isTax ? 'Industrial Depletion Tax' : 'Preservation Payout'}</span>
+                            <span style="font-weight: 700; color: ${isTax ? 'var(--color-crimson)' : 'var(--color-emerald)'}">
+                                ${isTax ? '-' : '+'}${formatCurrency(Math.abs(item.transfer))}
+                            </span>
+                        </div>
+                    `;
+                    transferFlowsContainer.appendChild(flowItem);
+                }
+            });
+
+            // Toggle screens
+            emptyState.style.display = 'none';
+            dashboardPanels.style.display = 'grid';
+        }
+
+        // Helper formatting currency
+        function formatCurrency(value) {
+            const absVal = Math.abs(value);
+            if (absVal >= 1e12) {
+                return (value / 1e12).toFixed(2) + ' T';
+            }
+            if (absVal >= 1e9) {
+                return (value / 1e9).toFixed(2) + ' B';
+            }
+            if (absVal >= 1e6) {
+                return (value / 1e6).toFixed(2) + ' M';
+            }
+            return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+        }
+
+        // Loads mock EU Ledger values
+        function loadDefaultEULedger() {
+            // Simulated CSV representing output from our Python engine
+            const defaultCSV = `Country_Name,GDP_USD,NDV,NDV_to_GDP,Transfer_Flow,Archetype
+Germany,4070000000000.0,4100523000000.0,100.75,-250000000.0,Industrial
+France,2780000000000.0,2835260000000.0,101.98,-250000000.0,Industrial
+Italy,2010000000000.0,2115160000000.0,105.23,-250000000.0,Industrial
+Spain,1400000000000.0,1475960000000.0,105.42,-250000000.0,Industrial
+Netherlands,1010000000000.0,1065160000000.0,105.46,-250000000.0,Industrial
+Poland,688000000000.0,1445120000000.0,210.04,136363636.36,Natural
+Sweden,586000000000.0,1198520000000.0,204.52,-250000000.0,Industrial
+Belgium,582000000000.0,1118520000000.0,192.18,-250000000.0,Industrial
+Ireland,533000000000.0,63352000000.0,11.88,-250000000.0,Industrial
+Austria,471000000000.0,648520000000.0,137.69,-250000000.0,Industrial
+Denmark,400000000000.0,51852000000.0,12.96,-250000000.0,Industrial
+Finland,281000000000.0,390236363636.36,138.87,136363636.36,Natural
+Romania,301000000000.0,678363636363.63,225.37,136363636.36,Natural
+Czechia,290000000000.0,501363636363.63,172.88,136363636.36,Natural
+Portugal,252000000000.0,460363636363.63,182.68,136363636.36,Natural
+Greece,219000000000.0,422363636363.63,192.86,136363636.36,Natural
+Hungary,178000000000.0,368363636363.63,206.94,136363636.36,Natural
+Slovakia,115000000000.0,221363636363.63,192.49,136363636.36,Natural
+Bulgaria,90000000000.0,218363636363.63,242.62,136363636.36,Natural
+Luxembourg,82000000000.0,9185200000.0,11.20,-250000000.0,Industrial
+Croatia,71000000000.0,145363636363.63,204.73,136363636.36,Natural
+Lithuania,70000000000.0,124363636363.63,177.66,136363636.36,Natural
+Slovenia,62000000000.0,103363636363.63,166.71,136363636.36,Natural
+Latvia,41000000000.0,78363636363.63,191.13,136363636.36,Natural
+Estonia,3800000000.0,63363636363.63,1667.46,136363636.36,Natural
+Cyprus,2800000000.0,21363636363.63,762.98,136363636.36,Natural
+Malta,1800000000.0,13363636363.63,742.42,136363636.36,Natural`;
+
+            processRawCSVData(defaultCSV);
+        }
+    </script>
+</body>
+</html>
