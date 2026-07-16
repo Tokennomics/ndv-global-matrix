@@ -1,44 +1,51 @@
-# GitHub Pages Deployment Guide: Tokennomics EU Sovereign Terminal
+# Sovereign Terminal Production Deployment Protocol
+**Classification**: Public Release Documentation  
+**Version**: 1.1
 
-To deploy your interactive terminal dashboard to the web via **GitHub Pages** (generating a public URL like `https://Tokennomics.github.io/ndv-global-matrix`), follow these simple configurations.
+This protocol details the configuration required to establish the static hosting pipeline for the Tokennomics Sovereign Terminal and register the weekly update cron pipeline on the target repository.
 
 ---
 
-## Method 1: Enabling Pages via the GitHub Interface (Recommended)
+## Section 1: Local Terminal Integration (GitHub Actions)
 
-Since `index.html` and `global_sovereign_ledger.csv` reside at the **root** of the repository, you can enable GitHub Pages directly without writing a compilation build script:
+Due to default GitHub API security restrictions protecting workflow configurations, automated integration tokens are restricted from modifying files inside the `.github/` namespace. The cron automation pipeline must be synchronized manually via a credentialed local terminal:
 
-1. Go to your repository on GitHub: `https://github.com/Tokennomics/ndv-global-matrix`.
-2. Click on the **Settings** tab in the top navigation bar.
-3. In the left sidebar, under the "Code and automation" section, click on **Pages**.
-4. Under **Build and deployment**:
+1. Open your local terminal interface.
+2. Navigate to the repository root directory:
+   ```bash
+   cd C:/Users/Robert/.gemini/antigravity/scratch/ndv_engine
+   ```
+3. Stage, commit, and push the workflow files using the local credentials manager:
+   ```bash
+   git add .github/
+   git commit -m "Enable weekly UN data automation"
+   git push origin main
+   ```
+
+---
+
+## Section 2: Static Hosting Architecture (GitHub Pages)
+
+To expose the interactive schema-agnostic terminal dashboard to public auditable URLs:
+
+1. Navigate to the remote repository management interface:
+   [https://github.com/Tokennomics/ndv-global-matrix](https://github.com/Tokennomics/ndv-global-matrix)
+2. Select the **Settings** panel from the upper navigation layout.
+3. Locate the **Code and automation** section in the left navigation sidebar and click **Pages**.
+4. Under the **Build and deployment** specification:
    - **Source**: Select `Deploy from a branch`.
-   - **Branch**: Click the dropdown, select **`main`**, and select the **`/ (root)`** folder.
-5. Click **Save**.
-6. Wait 1–2 minutes. GitHub will compile the page and display the public link at the top of the Pages settings window:
-   `Your site is live at https://Tokennomics.github.io/ndv-global-matrix/`
+   - **Branch**: Select `main`.
+   - **Folder**: Select `/ (root)`.
+5. Click **Save** to commit the hosting directive.
 
 ---
 
-## Method 2: Automated Deployment via Git Command Line
+## Section 3: Verification & Ingestion Audit
 
-If you want to configure or push changes directly from a secondary branch, you can create a `gh-pages` branch using these terminal commands:
+Upon saving, the deployment pipeline will initialize. Within 120 seconds, the public endpoint will stabilize at:
+`https://Tokennomics.github.io/ndv-global-matrix/`
 
-```bash
-# 1. Create a detached branch for static pages
-git checkout --orphan gh-pages
-
-# 2. Clear out unnecessary source files from stage
-git rm -rf .
-
-# 3. Checkout only index.html and the master dataset
-git checkout main index.html global_sovereign_ledger.csv
-
-# 4. Commit and push the static files
-git commit -m "Deploy dashboard to GitHub Pages"
-git push origin gh-pages
-
-# 5. Switch back to your working branch
-git checkout main
-```
-Then, under **Settings -> Pages**, select the source branch as **`gh-pages`** and folder as **`/ (root)`**.
+Execute the following verification checklist:
+- Check that the application successfully performs the asynchronous fetch sequence for `global_sovereign_ledger.csv`.
+- Verify the rendering of all 190+ countries in the ledger directory.
+- Confirm the automatic redistribution calculations under the Cohesion Transfer Matrix are properly displayed.
