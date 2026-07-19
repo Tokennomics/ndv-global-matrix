@@ -511,7 +511,7 @@
 
     <div class="container">
         
-        <!-- Summary Dashboard (V4.0 Omni-Matrix Upgrades) -->
+        <!-- Summary Dashboard (V5.0 Absolute Holism Upgrade) -->
         <div class="summary-grid" id="summary-cards">
             <div class="card-premium cohesion-dividend">
                 <div class="card-label">
@@ -542,17 +542,26 @@
 
             <div class="card-premium">
                 <div class="card-label">
-                    <span>Attention Economy Debt</span>
+                    <span>Offshored Entropy Debt</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+                <div class="card-value" style="color: var(--color-gold);" id="total-offshored-entropy-val">$0.00</div>
+                <div class="card-subtext">Embedded trade thermodynamic entropy deficit</div>
+            </div>
+
+            <div class="card-premium">
+                <div class="card-label">
+                    <span>Human Capital Decay</span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                 </div>
-                <div class="card-value" style="color: var(--color-crimson);" id="total-cognitive-val">$0.00</div>
-                <div class="card-subtext">Aggregated social debt from cognitive attention extraction</div>
+                <div class="card-value" style="color: var(--color-crimson);" id="total-human-decay-val">$0.00</div>
+                <div class="card-subtext">Combined Cognitive, Metabolic, and Epistemic depreciation</div>
             </div>
 
             <div class="card-premium">
                 <div class="card-label">
                     <span>Active Sovereigns</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
                 <div class="card-value" id="active-countries-val">0</div>
                 <div class="card-subtext" id="archetype-ratio-subtext">Industrial vs. Natural Archetypes</div>
@@ -632,6 +641,7 @@
                                 <th>Archetype</th>
                                 <th style="text-align: right;">Gross Output (GDP)</th>
                                 <th style="text-align: right;">Net Domestic Value (NDV)</th>
+                                <th style="text-align: right;">Offshored Entropy</th>
                                 <th style="text-align: right;">NDV / GDP Ratio</th>
                                 <th style="text-align: right;">Transfer Flow</th>
                             </tr>
@@ -677,6 +687,8 @@
         const archetypeRatioSubtext = document.getElementById('archetype-ratio-subtext');
         const totalThermoGdpVal = document.getElementById('total-thermo-gdp-val');
         const totalCognitiveVal = document.getElementById('total-cognitive-val');
+        const totalOffshoredEntropyVal = document.getElementById('total-offshored-entropy-val');
+        const totalHumanDecayVal = document.getElementById('total-human-decay-val');
 
         // Drag & Drop event listeners
         dropZone.addEventListener('click', () => fileInput.click());
@@ -754,6 +766,8 @@
 
             let totalThermoGdp = 0;
             let totalCognitiveDebt = 0;
+            let totalOffshoredEntropy = 0;
+            let totalHumanDecay = 0;
 
             // Map keys dynamically to handle schema variations (Transfer_Flow / Equilibrium_Transfer)
             const cleanData = data.map(item => {
@@ -790,6 +804,27 @@
                     cognitiveDebt = popVal * 0.88 * 4380.0;
                 }
 
+                // V5.0 Human & Offshored Entropy values
+                let metabolicDepreciation = parseFloat(item.metabolic_depreciation_usd || 0);
+                if (metabolicDepreciation === 0) {
+                    metabolicDepreciation = gdp * 0.10; // fallback 10% of GDP
+                }
+
+                let epistemicDecay = parseFloat(item.epistemic_decay_usd || 0);
+                if (epistemicDecay === 0) {
+                    epistemicDecay = gdp * 0.035; // fallback 3.5% decay
+                }
+
+                let offshoredEntropy = parseFloat(item.offshored_entropy_debt_usd || 0);
+                if (offshoredEntropy === 0) {
+                    const lowerName = country.toLowerCase();
+                    if (lowerName.includes('germany') || lowerName.includes('france') || lowerName.includes('netherlands') || lowerName.includes('united states') || lowerName.includes('united kingdom')) {
+                        offshoredEntropy = gdp * 0.05;
+                    } else {
+                        offshoredEntropy = gdp * 0.012;
+                    }
+                }
+
                 return {
                     country,
                     gdp,
@@ -798,7 +833,10 @@
                     transfer: transferVal,
                     ratio: ratio,
                     thermoGdp: thermoGdp,
-                    cognitiveDebt: cognitiveDebt
+                    cognitiveDebt: cognitiveDebt,
+                    metabolicDepreciation: metabolicDepreciation,
+                    epistemicDecay: epistemicDecay,
+                    offshoredEntropy: offshoredEntropy
                 };
             });
 
@@ -821,6 +859,8 @@
 
                 totalThermoGdp += item.thermoGdp;
                 totalCognitiveDebt += item.cognitiveDebt;
+                totalOffshoredEntropy += item.offshoredEntropy;
+                totalHumanDecay += (item.cognitiveDebt + item.metabolicDepreciation + item.epistemicDecay);
             });
 
             // Renders Summary UI elements
@@ -830,6 +870,8 @@
             archetypeRatioSubtext.innerText = `${industrialCount} Industrial Hubs | ${naturalCount} Natural Sinks`;
             totalThermoGdpVal.innerText = formatCurrency(totalThermoGdp);
             totalCognitiveVal.innerText = formatCurrency(totalCognitiveDebt);
+            totalOffshoredEntropyVal.innerText = formatCurrency(totalOffshoredEntropy);
+            totalHumanDecayVal.innerText = formatCurrency(totalHumanDecay);
 
             // Render Ledger rows and visuals
             cleanData.forEach((item, index) => {
@@ -855,6 +897,7 @@
                     <td><span class="badge-pill ${archetypeBadge}">${item.archetype}</span></td>
                     <td style="text-align: right;" class="font-mono">${formatCurrency(item.gdp)}</td>
                     <td style="text-align: right;" class="font-mono">${formatCurrency(item.ndv)}</td>
+                    <td style="text-align: right; color: var(--color-crimson);" class="font-mono">${formatCurrency(item.offshoredEntropy)}</td>
                     <td style="text-align: right; font-weight:600;" class="font-mono text-primary">${item.ratio.toFixed(2)}%</td>
                     <td style="text-align: right;"><span class="badge-pill ${transferBadgeClass}">${transferSymbol}${formatCurrency(item.transfer)}</span></td>
                 `;
@@ -921,34 +964,34 @@
         // Loads mock EU Ledger values
         function loadDefaultEULedger() {
             // Simulated CSV representing output from our Python engine
-            const defaultCSV = `Country_Name,gross_domestic_product_usd,thermodynamic_gdp_usd,net_domestic_value_usd,ndv_to_gdp_ratio,equilibrium_transfer_usd,cognitive_depletion_usd,financialization_friction_usd,cohesion_archetype
-Germany,4070000000000.0,3815000000000.0,4100523000000.0,100.75,-250000000.0,300000000000.0,260000000000.0,Industrial
-France,2780000000000.0,2600000000000.0,2835260000000.0,101.98,-250000000.0,200000000000.0,160000000000.0,Industrial
-Italy,2010000000000.0,1850000000000.0,2115160000000.0,105.23,-250000000.0,150000000000.0,110000000000.0,Industrial
-Spain,1400000000000.0,1290000000000.0,1475960000000.0,105.42,-250000000.0,100000000000.0,70000000000.0,Industrial
-Netherlands,1010000000000.0,910000000000.0,1065160000000.0,105.46,-250000000.0,80000000000.0,100000000000.0,Industrial
-Poland,688000000000.0,660000000000.0,1445120000000.0,210.04,136363636.36,60000000000.0,34000000000.0,Natural
-Sweden,586000000000.0,600000000000.0,1198520000000.0,204.52,-250000000.0,40000000000.0,32000000000.0,Industrial
-Belgium,582000000000.0,520000000000.0,1118520000000.0,192.18,-250000000.0,45000000000.0,36000000000.0,Industrial
-Ireland,533000000000.0,480000000000.0,63352000000.0,11.88,-250000000.0,40000000000.0,95000000000.0,Industrial
-Austria,471000000000.0,430000000000.0,648520000000.0,137.69,-250000000.0,35000000000.0,27000000000.0,Industrial
-Denmark,400000000000.0,410000000000.0,51852000000.0,12.96,-250000000.0,30000000000.0,26000000000.0,Industrial
-Finland,281000000000.0,265000000000.0,390236363636.36,138.87,136363636.36,22000000000.0,13000000000.0,Natural
-Romania,301000000000.0,285000000000.0,678363636363.63,225.37,136363636.36,25000000000.0,12000000000.0,Natural
-Czechia,290000000000.0,275000000000.0,501363636363.63,172.88,136363636.36,24000000000.0,14000000000.0,Natural
-Portugal,252000000000.0,230000000000.0,460363636363.63,182.68,136363636.36,20000000000.0,13000000000.0,Natural
-Greece,219000000000.0,200000000000.0,422363636363.63,192.86,136363636.36,18000000000.0,12000000000.0,Natural
-Hungary,178000000000.0,165000000000.0,368363636363.63,206.94,136363636.36,15000000000.0,800000000.0,Natural
-Slovakia,115000000000.0,105000000000.0,221363636363.63,192.49,136363636.36,9500000000.0,48000000.0,Natural
-Bulgaria,90000000000.0,85000000000.0,218363636363.63,242.62,136363636.36,8000000000.0,3600000000.0,Natural
-Luxembourg,82000000000.0,75000000000.0,9185200000.0,11.20,-250000000.0,12000000000.0,23000000000.0,Industrial
-Croatia,71000000000.0,66000000000.0,145363636363.63,204.73,136363636.36,6500000000.0,3200000000.0,Natural
-Lithuania,70000000000.0,64000000000.0,124363636363.63,177.66,136363636.36,6200000000.0,2900000000.0,Natural
-Slovenia,62000000000.0,58000000000.0,103363636363.63,166.71,136363636.36,5500000000.0,2800000000.0,Natural
-Latvia,41000000000.0,38000000000.0,78363636363.63,191.13,136363636.36,4000000000.0,16400000.0,Natural
-Estonia,38000000000.0,36000000000.0,63363636363.63,16.67,136363636.36,3600000000.0,171000000.0,Natural
-Cyprus,28000000000.0,25000000000.0,21363636363.63,76.29,136363636.36,2500000000.0,3360000000.0,Natural
-Malta,18000000000.0,16000000000.0,13363636363.63,74.24,136363636.36,1600000000.0,180000000.0,Natural`;al`;
+            const defaultCSV = `Country_Name,gross_domestic_product_usd,thermodynamic_gdp_usd,net_domestic_value_usd,ndv_to_gdp_ratio,equilibrium_transfer_usd,cognitive_depletion_usd,metabolic_depreciation_usd,epistemic_decay_usd,financialization_friction_usd,offshored_entropy_debt_usd,cohesion_archetype
+Germany,4070000000000.0,3815000000000.0,4100523000000.0,100.75,-250000000.0,300000000000.0,410000000000.0,140000000000.0,260000000000.0,200000000000.0,Industrial
+France,2780000000000.0,2600000000000.0,2835260000000.0,101.98,-250000000.0,200000000000.0,280000000000.0,90000000000.0,160000000000.0,140000000000.0,Industrial
+Italy,2010000000000.0,1850000000000.0,2115160000000.0,105.23,-250000000.0,150000000000.0,200000000000.0,70000000000.0,110000000000.0,100000000000.0,Industrial
+Spain,1400000000000.0,1290000000000.0,1475960000000.0,105.42,-250000000.0,100000000000.0,140000000000.0,50000000000.0,70000000000.0,70000000000.0,Industrial
+Netherlands,1010000000000.0,910000000000.0,1065160000000.0,105.46,-250000000.0,80000000000.0,100000000000.0,35000000000.0,100000000000.0,50000000000.0,Industrial
+Poland,688000000000.0,660000000000.0,1445120000000.0,210.04,136363636.36,60000000000.0,70000000000.0,25000000000.0,34000000000.0,34000000000.0,Natural
+Sweden,586000000000.0,600000000000.0,1198520000000.0,204.52,-250000000.0,40000000000.0,60000000000.0,20000000000.0,32000000000.0,32000000000.0,Industrial
+Belgium,582000000000.0,520000000000.0,1118520000000.0,192.18,-250000000.0,45000000000.0,60000000000.0,18000000000.0,36000000000.0,30000000000.0,Industrial
+Ireland,533000000000.0,480000000000.0,63352000000.0,11.88,-250000000.0,40000000000.0,50000000000.0,15000000000.0,95000000000.0,0.0,Industrial
+Austria,471000000000.0,430000000000.0,648520000000.0,137.69,-250000000.0,35000000000.0,48000000000.0,14000000000.0,27000000000.0,23000000000.0,Industrial
+Denmark,400000000000.0,410000000000.0,51852000000.0,12.96,-250000000.0,30000000000.0,40000000000.0,12000000000.0,26000000000.0,20000000000.0,Industrial
+Finland,281000000000.0,265000000000.0,390236363636.36,138.87,136363636.36,22000000000.0,28000000000.0,8000000000.0,13000000000.0,0.0,Natural
+Romania,301000000000.0,285000000000.0,678363636363.63,225.37,136363636.36,25000000000.0,30000000000.0,10000000000.0,12000000000.0,0.0,Natural
+Czechia,290000000000.0,275000000000.0,501363636363.63,172.88,136363636.36,24000000000.0,30000000000.0,9000000000.0,14000000000.0,0.0,Natural
+Portugal,252000000000.0,230000000000.0,460363636363.63,182.68,136363636.36,20000000000.0,25000000000.0,8000000000.0,13000000000.0,0.0,Natural
+Greece,219000000000.0,200000000000.0,422363636363.63,192.86,136363636.36,18000000000.0,22000000000.0,7000000000.0,12000000000.0,1000000000.0,Natural
+Hungary,178000000000.0,165000000000.0,368363636363.63,206.94,136363636.36,15000000000.0,18000000000.0,6000000000.0,800000000.0,0.0,Natural
+Slovakia,115000000000.0,105000000000.0,221363636363.63,192.49,136363636.36,9500000000.0,12000000000.0,4000000000.0,48000000.0,0.0,Natural
+Bulgaria,90000000000.0,85000000000.0,218363636363.63,242.62,136363636.36,8000000000.0,10000000000.0,3000000000.0,3600000000.0,3600000000.0,Natural
+Luxembourg,82000000000.0,75000000000.0,9185200000.0,11.20,-250000000.0,12000000000.0,15000000000.0,4000000000.0,23000000000.0,0.0,Industrial
+Croatia,71000000000.0,66000000000.0,145363636363.63,204.73,136363636.36,6500000000.0,8000000000.0,3000000000.0,3200000000.0,3000000000.0,Natural
+Lithuania,70000000000.0,64000000000.0,124363636363.63,177.66,136363636.36,6200000000.0,8000000000.0,2500000000.0,2900000000.0,0.0,Natural
+Slovenia,62000000000.0,58000000000.0,103363636363.63,166.71,136363636.36,5500000000.0,7000000000.0,2000000000.0,2800000000.0,0.0,Natural
+Latvia,41000000000.0,38000000000.0,78363636363.63,191.13,136363636.36,4000000000.0,5000000000.0,1500000000.0,16400000.0,800000000.0,Natural
+Estonia,38000000000.0,36000000000.0,63363636363.63,16.67,136363636.36,3600000000.0,4000000000.0,1200000000.0,171000000.0,0.0,Natural
+Cyprus,28000000000.0,25000000000.0,21363636363.63,76.29,136363636.36,2500000000.0,3000000000.0,1000000000.0,3360000000.0,100000000.0,Natural
+Malta,18000000000.0,16000000000.0,13363636363.63,74.24,136363636.36,1600000000.0,2000000000.0,60000000.0,180000000.0,0.0,Natural`;al`;
 
             processRawCSVData(defaultCSV);
         }
