@@ -735,11 +735,11 @@
             // Map keys dynamically to handle schema variations (Transfer_Flow / Equilibrium_Transfer)
             const cleanData = data.map(item => {
                 const country = item.Country_Name || item.country || item.state || 'Unknown';
-                const gdp = parseFloat(item.GDP_USD || item.Y || item.gdp || 0);
-                const ndv = parseFloat(item.NDV || item.NDV_final || item.NDV_raw || 0);
+                const gdp = parseFloat(item.GDP_USD || item.Y || item.gdp || item['1_Y_Gross'] || item.gross_domestic_product_usd || 0);
+                const ndv = parseFloat(item.NDV || item.NDV_final || item.NDV_raw || item['6_NDV'] || item.net_domestic_value_usd || 0);
                 
                 // Fetch archetype or calculate
-                let archetype = item.Archetype || item.archetype;
+                let archetype = item.Archetype || item.archetype || item.cohesion_archetype;
                 if (!archetype) {
                     // Fallback calc
                     const gdpPC = gdp / (parseFloat(item.Population || 1e7));
@@ -747,10 +747,10 @@
                 }
 
                 // Transfer flow column mapping
-                const transferVal = parseFloat(item.Transfer_Flow || item.Equilibrium_Transfer || item.sovereign_transfer || item.equilibrium_transfer || 0);
+                const transferVal = parseFloat(item.Transfer_Flow || item.Equilibrium_Transfer || item.sovereign_transfer || item.equilibrium_transfer || item.equilibrium_transfer_usd || 0);
                 
                 // Ratios
-                let ratio = parseFloat(item.NDV_to_GDP || 0);
+                let ratio = parseFloat(item.NDV_to_GDP || item.ndv_to_gdp_ratio || 0);
                 if (!ratio || ratio === 0) {
                     ratio = gdp > 0 ? (ndv / gdp) * 100 : 0;
                 }
