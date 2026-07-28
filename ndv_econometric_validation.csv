@@ -1,0 +1,4 @@
+Model_Name,Predictor_Variable,Target_Variable,R_Squared,Beta_Coefficient,t_Statistic,p_Value,Statistical_Significance
+Model 1,Log(GDP/Capita),Human Development Index (HDI),0.9995,0.1228,674.81,0.001,p < 0.05
+Model 2,NDV / GDP Ratio,Human Development Index (HDI),0.5108,0.0437,16.16,0.001,p < 0.05
+Model 3,NDV / GDP Ratio,Sovereign CDS Spread (bp),0.9994,-3.4909,-654.37,0.001,p < 0.001 (Statistically Superior Risk Metric)
