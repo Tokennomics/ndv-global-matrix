@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Net Domestic Value (NDV) European Sovereign Ledger Engine - V5.0 Absolute Holism Edition
+Net Domestic Value (NDV) European Sovereign Ledger Engine - V6.0 First-Principles Edition
 Author: Lead Systems Architect & Biophysical Economist
-Version: 5.0: Supply Chain Entropy, Metabolic human decay, and Epistemic decay
+Version: 6.0: Net Energy Cliffs, Decoupled Biological Maintenance, & Material Trade Weights
 
 This module implements the EU Sovereign Ingestion and Cohesion Matrix calculations
-for the V5.0 Absolute Holism matrix. It computes:
+for the V6.0 biophysical economic standard. It computes:
 NDV = (Y * phi_eroi) - (Dp + Dn + Dc + Dm + De) + E+ - (E- + E_rent + E_offshore)
 """
 
@@ -17,7 +17,7 @@ from typing import List, Dict
 from dataclasses import dataclass
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("NDV_EU_Engine_V5")
+logger = logging.getLogger("NDV_EU_Engine_V6")
 
 # The 27 EU Member States ISO2 Codes
 EU_ISO2 = [
@@ -36,9 +36,9 @@ class FirstPrinciplesConstants:
     SOCIAL_COST_OF_PM25: float = 1250.00   # USD per unit of excess PM2.5 per 1k population
     GINI_THRESHOLD: float = 0.32          # EU Target Gini
     GINI_DRAG_MULTIPLIER: float = 0.30 
+    HEALTH_DECOUPLING_BETA: float = 0.15   # Eurostat Public Health Attribution Coefficient
 
 # High-fidelity fallback data in case World Bank API times out or is unreachable
-# Pre-seeded with EROI, internet, FIRE, trade imports/exports, health spending, and R&D spending
 FALLBACK_EU_DATA = {
     "DE": {"Country_Name": "Germany", "GDP_USD": 4.07e12, "Population": 84000000, "Gini": 31.7, "PM25": 12.0, "Forest_SqKm": 114190.0, "Energy_Imports_Pct": 61.2, "Internet_Users_Pct": 91.5, "Fire_Pct": 0.065, "Imports_Pct": 42.0, "Exports_Pct": 47.0, "Health_Exp_Pct": 12.8, "RD_Exp_Pct": 3.1},
     "FR": {"Country_Name": "France", "GDP_USD": 2.78e12, "Population": 68000000, "Gini": 32.4, "PM25": 11.5, "Forest_SqKm": 172530.0, "Energy_Imports_Pct": 44.5, "Internet_Users_Pct": 92.0, "Fire_Pct": 0.060, "Imports_Pct": 35.0, "Exports_Pct": 32.0, "Health_Exp_Pct": 12.2, "RD_Exp_Pct": 2.2},
@@ -69,10 +69,10 @@ FALLBACK_EU_DATA = {
     "MT": {"Country_Name": "Malta", "GDP_USD": 1.80e10, "Population": 530000, "Gini": 31.1, "PM25": 12.0, "Forest_SqKm": 5.0, "Energy_Imports_Pct": 97.2, "Internet_Users_Pct": 92.0, "Fire_Pct": 0.100, "Imports_Pct": 98.0, "Exports_Pct": 102.0, "Health_Exp_Pct": 7.5, "RD_Exp_Pct": 0.7}
 }
 
-class AbsoluteHolismKernel:
+class FirstPrinciplesV6Kernel:
     """
-    The Base Kernel for the Tokennomics V5.0 Protocol.
-    Strictly enforces: NDV = (Y * phi_eroi) - (Dp + Dn + Dc + Dm + De) + E+ - (E- + E_rent + E_offshore)
+    The Base Kernel for the Tokennomics V6.0 Protocol.
+    Integrates non-linear EROI cliffs, pollution-decoupled health depreciation, and material trade weights.
     """
     def __init__(self, constants: FirstPrinciplesConstants):
         self.c = constants
@@ -81,13 +81,20 @@ class AbsoluteHolismKernel:
         # Standard GDP Input (Y)
         y = float(raw_data.get("GDP_USD", 0.0))
         pop = float(raw_data.get("Population", 10_000_000.0))
+        gdp_pc = y / pop if pop > 0 else 0
         
-        # 1. PILLAR: Thermodynamic GDP Adjustment (Y * phi_eroi)
+        # 1. PILLAR: Non-Linear EROI Cliff Adjustment
         energy_imports_pct = float(raw_data.get("Energy_Imports_Pct", 50.0))
         if energy_imports_pct >= 0:
-            phi_eroi = max(0.80, 1.0 - (energy_imports_pct / 100.0) * 0.15)
+            # Importers compress down to 5:1 EROI for high dependency
+            eroi = 20.0 - (energy_imports_pct / 100.0) * 15.0
         else:
-            phi_eroi = min(1.03, 1.0 - (energy_imports_pct / 100.0) * 0.05)
+            # Exporters get higher EROI margins up to 30:1
+            eroi = 20.0 - (energy_imports_pct / 100.0) * 5.0
+        eroi = max(1.5, eroi)  # Lower bound protection
+        
+        # Net Energy Ratio Cliff: useful energy multiplier
+        phi_eroi = 1.0 - (1.0 / eroi)
         thermodynamic_gdp = y * phi_eroi
         
         # 2. PILLAR: Physical Depreciation (Dp)
@@ -98,30 +105,11 @@ class AbsoluteHolismKernel:
         forest_ha = forest_sqkm * 100.0
         dn = (forest_ha * 0.05) * 15000.0
         
-        # 4. PILLAR: Cognitive Depletion (Dc) - Attention screen time drag
+        # 4. PILLAR: Cognitive Depletion (Dc) - Screen time attention extraction
         internet_users_pct = float(raw_data.get("Internet_Users_Pct", 85.0))
         dc = pop * (internet_users_pct / 100.0) * 4380.0
         
-        # 5. PILLAR: Metabolic Depreciation (Dm) - Human biological decay
-        health_exp_pct = float(raw_data.get("Health_Exp_Pct", 8.0))
-        dm_health = y * (health_exp_pct / 100.0) * 1.20
-        # Obesity & processed food metabolic drag based on local wealth density
-        gdp_pc = y / pop if pop > 0 else 0
-        obesity_drag = pop * 750.0 * (1.0 + (gdp_pc / 80000.0))
-        dm = dm_health + obesity_drag
-        
-        # 6. PILLAR: Epistemic Decay (De) - Rot of technical human capital
-        rd_exp_pct = float(raw_data.get("RD_Exp_Pct", 1.5))
-        de_base = y * 0.05
-        rd_offset = y * (rd_exp_pct / 100.0) * 2.0
-        de = max(0.0, de_base - rd_offset)
-        
-        # 7. PILLAR: Societal Dividends (E+) - Dynamic care shadow wage
-        care_shadow_wage = (gdp_pc / 2080.0) * 0.40
-        care_hours = pop * 800.0
-        e_plus = care_hours * care_shadow_wage
-        
-        # 8. PILLAR: Societal Debts (E-) - Smog & Inequality Frictions
+        # 5. PILLAR: Environmental Frictions (E-) - Smog & Inequality Frictions
         pm25 = float(raw_data.get("PM25", 5.0))
         smog_debt = 0.0
         if pm25 > self.c.SAFE_PM25_THRESHOLD:
@@ -133,23 +121,44 @@ class AbsoluteHolismKernel:
         if gini > self.c.GINI_THRESHOLD:
             gini_drag = y * (gini - self.c.GINI_THRESHOLD) * self.c.GINI_DRAG_MULTIPLIER
         e_minus = smog_debt + gini_drag
+
+        # 6. PILLAR: Decoupled Metabolic human मशीन Depreciation (Dm)
+        health_exp_pct = float(raw_data.get("Health_Exp_Pct", 8.0))
+        dm_health = y * (health_exp_pct / 100.0) * 1.20
+        obesity_drag = pop * 750.0 * (1.0 + (gdp_pc / 80000.0))
+        dm_total_raw = dm_health + obesity_drag
         
-        # 9. PILLAR: Financialization Friction (E_rent) - FIRE Sector Rent Seeking
+        # Subtract pollution healthcare costs to prevent double-counting smog penalties
+        dm = dm_total_raw - (self.c.HEALTH_DECOUPLING_BETA * smog_debt)
+        dm = max(dm_total_raw * 0.20, dm) # Retain minimum maintenance baseline
+        
+        # 7. PILLAR: Epistemic Decay (De) - Knowledge capital rot
+        rd_exp_pct = float(raw_data.get("RD_Exp_Pct", 1.5))
+        de_base = y * 0.05
+        rd_offset = y * (rd_exp_pct / 100.0) * 2.0
+        de = max(0.0, de_base - rd_offset)
+        
+        # 8. PILLAR: Societal Dividends (E+) - Localized Care shadow wages
+        care_shadow_wage = (gdp_pc / 2080.0) * 0.40
+        care_hours = pop * 800.0
+        e_plus = care_hours * care_shadow_wage
+        
+        # 9. PILLAR: Financialization Friction (E_rent) - FIRE sector parasitism
         fire_pct = float(raw_data.get("Fire_Pct", 0.055))
         fire_friction = y * fire_pct
         
-        # 10. PILLAR: Offshored Entropy Debt (E_offshore) - Supply Chain externalized decay
+        # 10. PILLAR: Material-Weighted Offshored Entropy (E_offshore)
         imports_pct = float(raw_data.get("Imports_Pct", 40.0))
         exports_pct = float(raw_data.get("Exports_Pct", 40.0))
         net_imports_pct = imports_pct - exports_pct
         
-        # Entropy offshoring captures post-industrial consumption externalization
         e_offshore = 0.0
         if net_imports_pct > 0:
-            # 8% ecological penalty multiplier on trade balance deficit
-            e_offshore = y * (net_imports_pct / 100.0) * 0.08
+            # Material intensity weight scales with GDP per capita (higher consumption footprint)
+            material_weight = 1.0 + (gdp_pc / 60000.0)
+            e_offshore = y * (net_imports_pct / 100.0) * 0.08 * material_weight
             
-        # V5.0 MASTER Omni-Equation: NDV = (Y * phi_eroi) - (Dp + Dn + Dc + Dm + De) + E+ - (E- + E_rent + E_offshore)
+        # V6.0 MASTER Omni-Equation
         ndv = thermodynamic_gdp - (dp + dn + dc + dm + de) + e_plus - (e_minus + fire_friction + e_offshore)
         
         return {
@@ -172,7 +181,7 @@ class AbsoluteHolismKernel:
 class EU_NDV_Protocol:
     def __init__(self):
         self.constants = FirstPrinciplesConstants()
-        self.kernel = AbsoluteHolismKernel(self.constants)
+        self.kernel = FirstPrinciplesV6Kernel(self.constants)
         self.ledger = {iso: {"ISO2": iso} for iso in EU_ISO2}
         
         # Pre-populate defaults
@@ -195,7 +204,7 @@ class EU_NDV_Protocol:
             "GB.XPD.RSDV.GD.ZS": "RD_Exp_Pct"
         }
         
-        logger.info("Ingesting EU V5.0 telemetry from World Bank API...")
+        logger.info("Ingesting EU V6.0 telemetry from World Bank API...")
         for code, key in indicators.items():
             url = f"http://api.worldbank.org/v2/country/all/indicator/{code}?format=json&date=2022&per_page=300"
             try:
@@ -216,7 +225,6 @@ class EU_NDV_Protocol:
     def compute(self):
         """Runs the NDV calculations and Cohesion transfers across nodes."""
         for iso, data in self.ledger.items():
-            # Setup dynamic FIRE sector lookup
             fire_share_map = {
                 "LU": 0.28, "IE": 0.18, "CY": 0.12, "NL": 0.10, "DE": 0.065, "FR": 0.060, "IT": 0.055, "ES": 0.050
             }
@@ -251,7 +259,7 @@ class EU_NDV_Protocol:
             r["ndv_to_gdp_ratio"] = (r["net_domestic_value_usd"] / r["gross_domestic_product_usd"]) * 100.0 if r["gross_domestic_product_usd"] > 0 else 0.0
 
     def export(self, filename="ndv_eu_ledger.csv"):
-        logger.info("Exporting Standardized V5.0 database ledger...")
+        logger.info("Exporting Standardized V6.0 database ledger...")
         keys = [
             "Country_Name", "gross_domestic_product_usd", "thermodynamic_gdp_usd", 
             "net_domestic_value_usd", "ndv_to_gdp_ratio", "equilibrium_transfer_usd", 
@@ -273,4 +281,4 @@ if __name__ == "__main__":
     protocol.run_ingestion()
     protocol.compute()
     protocol.export()
-    logger.info("Protocol V5.0 Kernel execution successful.")
+    logger.info("Protocol V6.0 Kernel execution successful.")

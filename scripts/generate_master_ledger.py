@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Net Domestic Value (NDV) V5.0 Absolute Holism Global Scraper
+Net Domestic Value (NDV) V6.0 First-Principles Global Scraper
 Author: Lead Systems Architect & Biophysical Economist
-Version: 5.0: Supply Chain Entropy, Metabolic human decay, and Epistemic decay
+Version: 6.0: Net Energy Cliffs, Decoupled Biological Maintenance, & Material Trade Weights
 
 This module scrapes indicators for all 190+ sovereign nations, routes them
-through the AbsoluteHolismKernel, and outputs a standardized global_sovereign_ledger.csv.
+through the FirstPrinciplesV6Kernel, and outputs a standardized global_sovereign_ledger.csv.
 """
 
 import urllib.request
@@ -21,9 +21,9 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
-logger = logging.getLogger("NDV_Holism_Scraper")
+logger = logging.getLogger("NDV_V6_Scraper")
 
-# Pre-seeded fallback data for major countries for EROI, internet, FIRE, trade, health, and R&D
+# Pre-seeded fallback data for major countries for V6.0 equations
 FALLBACK_GLOBAL_DATA = {
     "USA": {"Country_Name": "United States", "GDP_USD": 27.36e12, "Population": 335000000, "Gini": 41.5, "PM25": 7.4, "Forest_SqKm": 3097900.0, "Energy_Imports_Pct": -5.2, "Internet_Users_Pct": 91.8, "Fire_Pct": 0.200, "Imports_Pct": 14.0, "Exports_Pct": 11.0, "Health_Exp_Pct": 16.6, "RD_Exp_Pct": 3.5},
     "CHN": {"Country_Name": "China", "GDP_USD": 17.79e12, "Population": 1410000000, "Gini": 38.2, "PM25": 35.5, "Forest_SqKm": 2199700.0, "Energy_Imports_Pct": 15.6, "Internet_Users_Pct": 76.4, "Fire_Pct": 0.075, "Imports_Pct": 17.0, "Exports_Pct": 20.0, "Health_Exp_Pct": 5.4, "RD_Exp_Pct": 2.4},
@@ -91,7 +91,7 @@ class GlobalDataScraper:
         url = f"http://api.worldbank.org/v2/country/all/indicator/{indicator}?format=json&date=2022&per_page=300"
         
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Tokennomics-NDV-Engine/5.0'})
+            req = urllib.request.Request(url, headers={'User-Agent': 'Tokennomics-NDV-Engine/6.0'})
             with urllib.request.urlopen(req, timeout=5) as response:
                 data = json.loads(response.read().decode('utf-8'))
                 
@@ -116,7 +116,7 @@ class GlobalDataScraper:
             logging.warning(f"[INGEST] Failed to fetch {indicator}: {e}. Retaining local fallback values.")
 
     def generate_global_matrix(self):
-        # Fetch GDP, Population, Gini, PM2.5, Forest Area, Energy Imports, Internet Users, Trade Imports/Exports, Health, R&D
+        # Fetch standard V6 telemetry
         self.fetch_indicator("NY.GDP.MKTP.CD", "GDP_USD")
         self.fetch_indicator("SP.POP.TOTL", "Population")
         self.fetch_indicator("SI.POV.GINI", "Gini")
@@ -130,7 +130,7 @@ class GlobalDataScraper:
         self.fetch_indicator("GB.XPD.RSDV.GD.ZS", "RD_Exp_Pct")
         
         processed_nations = []
-        logging.info("[KERNEL] Processing nations through V5.0 Absolute Holism Biophysical Equation...")
+        logging.info("[KERNEL] Processing nations through V6.0 First-Principles Equation...")
         
         for iso, data in self.raw_data.items():
             if data.get("GDP_USD", 0) == 0 or data.get("Population", 0) == 0:
@@ -138,6 +138,7 @@ class GlobalDataScraper:
                 
             y_gross = float(data["GDP_USD"])
             pop = float(data["Population"])
+            gdp_pc = y_gross / pop if pop > 0 else 0
             
             # Local Gini, PM2.5, Forest
             gini = float(data.get("Gini", 35.0)) / 100.0 if data.get("Gini") else 0.38
@@ -145,46 +146,49 @@ class GlobalDataScraper:
             forest_sqkm = float(data.get("Forest_SqKm", 1000.0))
             forest_ha = forest_sqkm * 100.0
             
-            # Setup EROI
+            # Non-Linear EROI Cliff calculation
             energy_imports_pct = float(data.get("Energy_Imports_Pct", 50.0))
             if energy_imports_pct >= 0:
-                phi_eroi = max(0.80, 1.0 - (energy_imports_pct / 100.0) * 0.15)
+                eroi = 20.0 - (energy_imports_pct / 100.0) * 15.0
             else:
-                phi_eroi = min(1.03, 1.0 - (energy_imports_pct / 100.0) * 0.05)
+                eroi = 20.0 - (energy_imports_pct / 100.0) * 5.0
+            eroi = max(1.5, eroi)
+            
+            phi_eroi = 1.0 - (1.0 / eroi)
             thermodynamic_gdp = y_gross * phi_eroi
             
-            # Physical & Biosphere Depreciation
+            # Physical & ecological depreciation
             dp = y_gross * 0.04
             dn = (forest_ha * 0.05) * 15000.0
             
-            # Cognitive Depletion (Dc)
+            # Attention economy drag
             internet_users_pct = float(data.get("Internet_Users_Pct", 85.0))
             dc = pop * (internet_users_pct / 100.0) * 4380.0
             
-            # Metabolic human मशीन depreciation (Dm)
+            # Smog & inequality frictions
+            smog_debt = max(0, (pm25 - 5.0) * 800 * (pop / 1000.0))
+            gini_drag = max(0, (gini - 0.35) * y_gross * 0.25)
+            e_minus = smog_debt + gini_drag
+            
+            # Decoupled Health Maintenance (0.15 smog decoupling)
             health_exp_pct = float(data.get("Health_Exp_Pct", 8.0))
             dm_health = y_gross * (health_exp_pct / 100.0) * 1.20
-            gdp_pc = y_gross / pop if pop > 0 else 0
             obesity_drag = pop * 750.0 * (1.0 + (gdp_pc / 80000.0))
-            dm = dm_health + obesity_drag
+            dm_total_raw = dm_health + obesity_drag
+            dm = max(dm_total_raw * 0.20, dm_total_raw - (0.15 * smog_debt))
             
-            # Epistemic decay of knowledge (De)
+            # Epistemic decay of knowledge
             rd_exp_pct = float(data.get("RD_Exp_Pct", 1.5))
             de_base = y_gross * 0.05
             rd_offset = y_gross * (rd_exp_pct / 100.0) * 2.0
             de = max(0.0, de_base - rd_offset)
             
-            # Care shadow wage (E+)
+            # Care economy dividends
             care_shadow_wage = (gdp_pc / 2080.0) * 0.40
             care_hours = pop * 800.0
             e_plus = care_hours * care_shadow_wage
             
-            # Frictions (E-)
-            smog_debt = max(0, (pm25 - 5.0) * 800 * (pop / 1000.0))
-            gini_drag = max(0, (gini - 0.35) * y_gross * 0.25)
-            e_minus = smog_debt + gini_drag
-            
-            # FIRE sector rent seeking (E_rent)
+            # FIRE sector rent seeking
             fire_share_map = {
                 "USA": 0.20, "SGP": 0.22, "LUX": 0.28, "IRL": 0.18, "GBR": 0.085,
                 "DEU": 0.065, "FRA": 0.060, "ITA": 0.055, "ESP": 0.050, "NLD": 0.100
@@ -192,21 +196,21 @@ class GlobalDataScraper:
             fire_pct = data.get("Fire_Pct", fire_share_map.get(iso, 0.055))
             fire_friction = y_gross * fire_pct
             
-            # Offshored supply chain entropy (E_offshore)
+            # Material-Weighted Offshored Entropy
             imports_pct = float(data.get("Imports_Pct", 40.0))
             exports_pct = float(data.get("Exports_Pct", 40.0))
             net_imports_pct = imports_pct - exports_pct
             
             e_offshore = 0.0
             if net_imports_pct > 0:
-                e_offshore = y_gross * (net_imports_pct / 100.0) * 0.08
+                material_weight = 1.0 + (gdp_pc / 60000.0)
+                e_offshore = y_gross * (net_imports_pct / 100.0) * 0.08 * material_weight
             
             # Cohesion Archetype
             forest_pc = forest_ha / pop if pop > 0 else 0
             archetype = "Industrial" if forest_pc < 0.25 else "Natural"
             
-            # V5.0 Absolute Holism Master Equation:
-            # NDV = (Y * phi_eroi) - (Dp + Dn + Dc + Dm + De) + E+ - (E- + E_rent + E_offshore)
+            # V6.0 Equation
             ndv = thermodynamic_gdp - (dp + dn + dc + dm + de) + e_plus - (e_minus + fire_friction + e_offshore)
             
             processed_nations.append({
@@ -232,7 +236,7 @@ class GlobalDataScraper:
                 "ndv_to_gdp_ratio": 0.0
             })
             
-        # Apply Cohesion Matrix: 10% tax on Industrial depletion redistributed to Natural Sinks
+        # Apply Cohesion Matrix (10% tax on Industrial depletion redistributed to Natural Sinks)
         total_tax_pool = sum(abs(r["natural_depletion_usd"]) for r in processed_nations if r["cohesion_archetype"] == "Industrial") * 0.10
         natural_sinks_count = sum(1 for r in processed_nations if r["cohesion_archetype"] == "Natural")
         
@@ -266,4 +270,4 @@ if __name__ == "__main__":
             writer = csv.DictWriter(f, fieldnames=keys)
             writer.writeheader()
             writer.writerows(final_ledger)
-        logging.info(f"[SUCCESS] V5.0 Global Sovereign Ledger generated with {len(final_ledger)} nations at {output_path}")
+        logging.info(f"[SUCCESS] V6.0 Global Sovereign Ledger generated with {len(final_ledger)} nations at {output_path}")

@@ -537,7 +537,7 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 </div>
                 <div class="card-value" style="color: var(--color-emerald);" id="total-thermo-gdp-val">$0.00</div>
-                <div class="card-subtext">Total Gross output adjusted for EROI efficiency (\(\phi_{eroi}\))</div>
+                <div class="card-subtext">Adjusted for EROI Net Energy Cliff (1 - 1/EROI)</div>
             </div>
 
             <div class="card-premium">
@@ -546,7 +546,7 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                 </div>
                 <div class="card-value" style="color: var(--color-gold);" id="total-offshored-entropy-val">$0.00</div>
-                <div class="card-subtext">Embedded trade thermodynamic entropy deficit</div>
+                <div class="card-subtext">Decoupled trade deficit weighted by material footprint intensity</div>
             </div>
 
             <div class="card-premium">
@@ -555,7 +555,7 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                 </div>
                 <div class="card-value" style="color: var(--color-crimson);" id="total-human-decay-val">$0.00</div>
-                <div class="card-subtext">Combined Cognitive, Metabolic, and Epistemic depreciation</div>
+                <div class="card-subtext">Decoupled Cognitive, Metabolic, and Epistemic depreciation</div>
             </div>
 
             <div class="card-premium">
@@ -795,7 +795,9 @@
                 // V4.0 Thermodynamic & Attention economy values
                 let thermoGdp = parseFloat(item.thermodynamic_gdp_usd || 0);
                 if (thermoGdp === 0) {
-                    thermoGdp = gdp * 0.92; // 8% EROI drag fallback
+                    // Fallback V6.0 Non-Linear EROI cliff formula
+                    const eroi = 15.0; // average importer EROI fallback
+                    thermoGdp = gdp * (1.0 - (1.0 / eroi));
                 }
                 
                 let cognitiveDebt = parseFloat(item.cognitive_depletion_usd || 0);
@@ -807,7 +809,13 @@
                 // V5.0 Human & Offshored Entropy values
                 let metabolicDepreciation = parseFloat(item.metabolic_depreciation_usd || 0);
                 if (metabolicDepreciation === 0) {
-                    metabolicDepreciation = gdp * 0.10; // fallback 10% of GDP
+                    // V6.0 decoupled biological maintenance fallback
+                    const popVal = parseFloat(item.Population || 1e7);
+                    const rawHealth = gdp * 0.11 * 1.20;
+                    const obesity = popVal * 750.0 * (1.0 + ((gdp / popVal) / 80000.0));
+                    // Decouple smog (estimate smog friction fallback as 0.005 of GDP)
+                    const smogEst = gdp * 0.005;
+                    metabolicDepreciation = Math.max((rawHealth + obesity) * 0.20, (rawHealth + obesity) - 0.15 * smogEst);
                 }
 
                 let epistemicDecay = parseFloat(item.epistemic_decay_usd || 0);
@@ -818,10 +826,13 @@
                 let offshoredEntropy = parseFloat(item.offshored_entropy_debt_usd || 0);
                 if (offshoredEntropy === 0) {
                     const lowerName = country.toLowerCase();
+                    const popVal = parseFloat(item.Population || 1e7);
+                    const gdpPC = gdp / popVal;
+                    const matWeight = 1.0 + (gdpPC / 60000.0);
                     if (lowerName.includes('germany') || lowerName.includes('france') || lowerName.includes('netherlands') || lowerName.includes('united states') || lowerName.includes('united kingdom')) {
-                        offshoredEntropy = gdp * 0.05;
+                        offshoredEntropy = gdp * 0.05 * 0.08 * matWeight;
                     } else {
-                        offshoredEntropy = gdp * 0.012;
+                        offshoredEntropy = gdp * 0.012 * 0.08 * matWeight;
                     }
                 }
 
