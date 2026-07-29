@@ -504,7 +504,11 @@
             <h1>Tokennomics EU Sovereign Terminal <span class="badge-terminal">Version 3.0</span></h1>
             <p>Algorithmic Cohesion Framework and Net Domestic Value Accounting Engine</p>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; gap: 1rem; align-items: center;">
+            <div class="mode-toggle-group" style="display: flex; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 4px;">
+                <button class="mode-btn active" id="btn-mode-general" onclick="setNdvMode('general')" style="padding: 6px 14px; border: none; background: var(--color-cyan); color: #000; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;">General NDV (Policy)</button>
+                <button class="mode-btn" id="btn-mode-special" onclick="setNdvMode('special')" style="padding: 6px 14px; border: none; background: transparent; color: var(--text-secondary); border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Special NDV (Quantum)</button>
+            </div>
             <button class="btn-action" onclick="loadDefaultEULedger()">Load Simulated EU Ledger</button>
         </div>
     </header>
@@ -710,6 +714,22 @@
         const totalAiComputeVal = document.getElementById('total-ai-compute-val');
         const totalDemographicVal = document.getElementById('total-demographic-val');
 
+        // Dual Mode State
+        let currentNdvMode = 'general'; // 'general' or 'special'
+        let cachedRawData = null;
+
+        function setNdvMode(mode) {
+            currentNdvMode = mode;
+            document.getElementById('btn-mode-general').style.background = mode === 'general' ? 'var(--color-cyan)' : 'transparent';
+            document.getElementById('btn-mode-general').style.color = mode === 'general' ? '#000' : 'var(--text-secondary)';
+            document.getElementById('btn-mode-special').style.background = mode === 'special' ? 'var(--color-gold)' : 'transparent';
+            document.getElementById('btn-mode-special').style.color = mode === 'special' ? '#000' : 'var(--text-secondary)';
+            
+            if (cachedRawData) {
+                renderDashboard(cachedRawData);
+            }
+        }
+
         // Drag & Drop event listeners
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', handleFileSelect);
@@ -774,7 +794,8 @@
 
         // Map and render dashboards
         function renderDashboard(data) {
-            // Clean table and visuals
+            cachedRawData = data;
+            if (!data || data.length === 0) return;
             ledgerTableBody.innerHTML = '';
             chartBarsContainer.innerHTML = '';
             transferFlowsContainer.innerHTML = '';
@@ -869,10 +890,17 @@
                     demographicDrag = gdp * 0.015;
                 }
 
+                let gdp = parseFloat(item['1_Y_Gross'] || item.gross_domestic_product_usd || item.GDP_USD || item.Y || 0);
+                let generalNdv = parseFloat(item.general_ndv_usd || item['6_NDV_Net_Value'] || item.net_domestic_value_usd || item.NDV || 0);
+                let specialNdv = parseFloat(item.special_ndv_quantum_score || (generalNdv * 0.92));
+
+                let activeNdv = (currentNdvMode === 'special') ? specialNdv : generalNdv;
+                let ratio = gdp > 0 ? ((activeNdv / gdp) * 100).toFixed(1) : "0.0";
+
                 return {
                     country,
                     gdp,
-                    ndv,
+                    ndv: activeNdv,
                     archetype,
                     transfer: transferVal,
                     ratio: ratio,

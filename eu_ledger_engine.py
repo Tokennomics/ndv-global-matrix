@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """
-Net Domestic Value (NDV) European Sovereign Ledger Engine - V7.0 Absolute Edition
+Net Domestic Value (NDV) European Sovereign Ledger Engine - Dual Mode Edition
 Author: Lead Systems Architect & Biophysical Economist
-Version: 7.0 Absolute Engine: AI Compute Obsolescence & Demographic Drag
-
-This module computes the V7.0 EU Sovereign Cohesion Matrix:
-NDV_V7 = (Y * phi_eroi) - (Dp + Dn + Dc + Dm + De + Ds + Dai + Ddemo) + E+ - (E- + E_rent + E_offshore_MRIO)
+Version: Dual Architecture: General NDV (Policy Mode) & Special NDV (Quantum Frontier Mode)
 """
 
 import json
 import urllib.request
 import csv
 import logging
+import math
 from typing import List, Dict
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("NDV_EU_Engine_V7")
+logger = logging.getLogger("NDV_EU_Dual_Engine")
 
 EU_ISO2 = [
     "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", 
@@ -53,19 +51,18 @@ FALLBACK_EU_DATA = {
     "MT": {"Country_Name": "Malta", "GDP_USD": 1.80e10, "Population": 530000, "Gini": 31.1, "PM25": 12.0, "Forest_SqKm": 5.0, "Energy_Imports_Pct": 97.2, "Internet_Users_Pct": 92.0, "Fire_Pct": 0.100, "Imports_Pct": 98.0, "Exports_Pct": 102.0, "Health_Exp_Pct": 7.5, "RD_Exp_Pct": 0.7, "OldAge_Dep_Pct": 28.1, "Trust_Index": 0.55, "AI_Compute_Pct": 0.012}
 }
 
-class EU_NDV_V7_Protocol:
+class EU_NDV_Dual_Protocol:
     def __init__(self):
         self.ledger = {iso: {"ISO2": iso} for iso in EU_ISO2}
         for iso, data in FALLBACK_EU_DATA.items():
             self.ledger[iso].update(data)
 
-    def compute_v7(self):
+    def compute(self):
         for iso, data in self.ledger.items():
             y = float(data.get("GDP_USD", 0.0))
             pop = float(data.get("Population", 10e6))
             gdp_pc = y / pop if pop > 0 else 0
             
-            # EROI
             energy_imports = float(data.get("Energy_Imports_Pct", 50.0))
             eroi = max(1.5, 20.0 - (energy_imports / 100.0) * (15.0 if energy_imports >= 0 else 5.0))
             thermo_gdp = y * (1.0 - (1.0 / eroi))
@@ -86,38 +83,45 @@ class EU_NDV_V7_Protocol:
 
             de = max(0.0, (y * 0.05) - (y * (float(data.get("RD_Exp_Pct", 1.5)) / 100.0) * 2.0))
             ds = y * (1.0 - float(data.get("Trust_Index", 0.55))) * 0.04
-
-            # V7 Pillars
             dai = y * float(data.get("AI_Compute_Pct", 0.02)) * 1.35
+            
             oldage_dep = float(data.get("OldAge_Dep_Pct", 25.0))
-            ddemo = max(0.0, y * ((oldage_dep - 30.0) / 100.0) * 0.75)
+            ddemo = max(0.0, y * ((oldage_dep - 30.0) / 100.0) * 0.75) if oldage_dep > 30.0 else 0.0
 
             e_plus = (pop * 800.0) * ((gdp_pc / 2080.0) * 0.40)
             fire = y * float(data.get("Fire_Pct", 0.055))
             net_imp = float(data.get("Imports_Pct", 40.0)) - float(data.get("Exports_Pct", 40.0))
             e_offshore = max(0.0, y * (net_imp / 100.0) * 0.08 * (1.0 + (gdp_pc / 60000.0)))
 
-            cohesion_archetype = "Industrial" if (forest_ha / pop) < 0.25 else "Natural"
+            # GENERAL NDV (USD)
+            general_ndv = thermo_gdp - (dp + dn + dc + dm + de + ds + dai + ddemo) + e_plus - (e_minus + fire + e_offshore)
+            general_ratio = (general_ndv / y) * 100.0 if y > 0 else 0.0
 
-            ndv_v7 = thermo_gdp - (dp + dn + dc + dm + de + ds + dai + ddemo) + e_plus - (e_minus + fire + e_offshore)
+            # SPECIAL NDV (Quantum Score)
+            norm_ratio = max(0.01, min(0.99, abs(general_ratio) / 200.0))
+            von_neumann_entropy = - (norm_ratio * math.log(norm_ratio))
+            caputo_memory = 0.85 + 0.15 * (float(data.get("RD_Exp_Pct", 1.5)) / 5.0)
+            special_quantum_score = general_ndv * (1.0 - 0.10 * von_neumann_entropy) * caputo_memory
+
+            cohesion_archetype = "Industrial" if (forest_ha / pop) < 0.25 else "Natural"
 
             self.ledger[iso].update({
                 "gross_domestic_product_usd": y,
                 "thermodynamic_gdp_usd": thermo_gdp,
-                "physical_depreciation_usd": dp,
+                "general_ndv_usd": general_ndv,
+                "special_ndv_quantum_score": special_quantum_score,
+                "net_domestic_value_usd": general_ndv,
                 "natural_depletion_usd": dn,
+                "ndv_to_gdp_ratio": general_ratio,
+                "equilibrium_transfer_usd": 0.0,
                 "cognitive_depletion_usd": dc,
                 "metabolic_depreciation_usd": dm,
                 "epistemic_decay_usd": de,
-                "social_capital_decay_usd": ds,
                 "ai_compute_obsolescence_usd": dai,
                 "demographic_drag_usd": ddemo,
-                "offshored_entropy_debt_usd": e_offshore,
                 "financialization_friction_usd": fire,
-                "net_domestic_value_usd": ndv_v7,
-                "cohesion_archetype": cohesion_archetype,
-                "equilibrium_transfer_usd": 0.0,
-                "ndv_to_gdp_ratio": (ndv_v7 / y) * 100.0 if y > 0 else 0.0
+                "offshored_entropy_debt_usd": e_offshore,
+                "cohesion_archetype": cohesion_archetype
             })
 
         # Cohesion tax
@@ -127,30 +131,32 @@ class EU_NDV_V7_Protocol:
             if r.get("cohesion_archetype") == "Industrial":
                 tax = abs(r.get("natural_depletion_usd", 0)) * 0.10
                 r["net_domestic_value_usd"] -= tax
+                r["general_ndv_usd"] -= tax
                 r["equilibrium_transfer_usd"] = -tax
             else:
                 payout = (total_tax_pool / natural_sinks) if natural_sinks > 0 else 0.0
                 r["net_domestic_value_usd"] += payout
+                r["general_ndv_usd"] += payout
                 r["equilibrium_transfer_usd"] = payout
-            r["ndv_to_gdp_ratio"] = (r["net_domestic_value_usd"] / r["gross_domestic_product_usd"]) * 100.0
+            r["ndv_to_gdp_ratio"] = (r["general_ndv_usd"] / r["gross_domestic_product_usd"]) * 100.0
 
     def export(self, filename="ndv_eu_ledger.csv"):
         keys = [
             "Country_Name", "gross_domestic_product_usd", "thermodynamic_gdp_usd", 
-            "net_domestic_value_usd", "ndv_to_gdp_ratio", "equilibrium_transfer_usd", 
-            "cognitive_depletion_usd", "metabolic_depreciation_usd", "epistemic_decay_usd",
-            "ai_compute_obsolescence_usd", "demographic_drag_usd",
-            "financialization_friction_usd", "offshored_entropy_debt_usd", "cohesion_archetype"
+            "general_ndv_usd", "special_ndv_quantum_score", "net_domestic_value_usd", 
+            "ndv_to_gdp_ratio", "equilibrium_transfer_usd", "cognitive_depletion_usd", 
+            "metabolic_depreciation_usd", "epistemic_decay_usd", "ai_compute_obsolescence_usd", 
+            "demographic_drag_usd", "financialization_friction_usd", "offshored_entropy_debt_usd", "cohesion_archetype"
         ]
-        sorted_ledger = sorted(self.ledger.values(), key=lambda x: x.get('net_domestic_value_usd', 0), reverse=True)
+        sorted_ledger = sorted(self.ledger.values(), key=lambda x: x.get('general_ndv_usd', 0), reverse=True)
         with open(filename, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=keys, extrasaction='ignore')
             writer.writeheader()
             writer.writerows(sorted_ledger)
-        logger.info(f"Exported V7.0 EU Ledger to {filename}")
+        logger.info(f"Exported Dual EU Ledger to {filename}")
 
 if __name__ == "__main__":
-    p = EU_NDV_V7_Protocol()
-    p.compute_v7()
+    p = EU_NDV_Dual_Protocol()
+    p.compute()
     p.export()
-    logger.info("Protocol V7.0 EU Kernel execution successful.")
+    logger.info("Protocol Dual EU Kernel execution successful.")

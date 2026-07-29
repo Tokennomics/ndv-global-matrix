@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Net Domestic Value (NDV) V7.0 Absolute Macroeconomic Engine Scraper
+Net Domestic Value (NDV) Dual Engine (General NDV vs Special NDV)
 Author: Lead Systems Architect & Biophysical Economist
-Version: 7.0 Absolute Engine: AI Compute Obsolescence, Demographic Inverted Drag, MRIO Trade Matrices & Satellite Telemetry
+Version: Dual Architecture (General Policy Edition & Special Quantum Edition)
 
-Computes:
-NDV_V7 = (Y * phi_eroi) - (Dp + Dn + Dc + Dm + De + Ds + Dai + Ddemo) + E+ - (E- + E_rent + E_offshore_MRIO)
+Computes both:
+1. General NDV (USD): Deterministic Biophysical Policy Value
+2. Special NDV (Quantum Score): Density Matrix & Caputo Memory Entanglement Index
 """
 
 import urllib.request
@@ -14,15 +15,11 @@ import csv
 import logging
 import os
 import math
-from typing import Dict, List, Optional
+from typing import Dict, List
 from satellite_telemetry_engine import SatelliteTelemetryEngine
 
-logging.basicConfig(
-    level=logging.INFO, 
-    format='%(asctime)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger("NDV_V7_Engine")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+logger = logging.getLogger("NDV_Dual_Engine")
 
 FALLBACK_GLOBAL_DATA = {
     "USA": {"Country_Name": "United States", "GDP_USD": 27.36e12, "Population": 335000000, "Gini": 41.5, "PM25": 7.4, "Forest_SqKm": 3097900.0, "Energy_Imports_Pct": -5.2, "Internet_Users_Pct": 91.8, "Fire_Pct": 0.200, "Imports_Pct": 14.0, "Exports_Pct": 11.0, "Health_Exp_Pct": 16.6, "RD_Exp_Pct": 3.5, "OldAge_Dep_Pct": 26.5, "Trust_Index": 0.58, "AI_Compute_Pct": 0.045},
@@ -37,7 +34,7 @@ FALLBACK_GLOBAL_DATA = {
     "KOR": {"Country_Name": "Korea, Rep.", "GDP_USD": 1.71e12, "Population": 51000000, "Gini": 31.4, "PM25": 18.0, "Forest_SqKm": 63400.0, "Energy_Imports_Pct": 82.1, "Internet_Users_Pct": 97.6, "Fire_Pct": 0.070, "Imports_Pct": 42.0, "Exports_Pct": 44.0, "Health_Exp_Pct": 9.7, "RD_Exp_Pct": 4.9, "OldAge_Dep_Pct": 25.8, "Trust_Index": 0.58, "AI_Compute_Pct": 0.038}
 }
 
-class AbsoluteMacroeconomicEngine:
+class DualNDVEngine:
     def __init__(self):
         self.raw_data = {}
         for iso, data in FALLBACK_GLOBAL_DATA.items():
@@ -46,10 +43,9 @@ class AbsoluteMacroeconomicEngine:
         self.sat_engine = SatelliteTelemetryEngine()
 
     def fetch_indicator(self, indicator: str, data_key: str):
-        logger.info(f"[INGEST] Fetching World Bank Indicator: {indicator}...")
         url = f"http://api.worldbank.org/v2/country/all/indicator/{indicator}?format=json&date=2022&per_page=300"
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Tokennomics-NDV-Engine/7.0'})
+            req = urllib.request.Request(url, headers={'User-Agent': 'Tokennomics-NDV-DualEngine/1.0'})
             with urllib.request.urlopen(req, timeout=5) as response:
                 data = json.loads(response.read().decode('utf-8'))
             if len(data) > 1 and data[1] is not None:
@@ -64,7 +60,7 @@ class AbsoluteMacroeconomicEngine:
         except Exception as e:
             logger.warning(f"[INGEST] Could not fetch {indicator}: {e}. Retaining local fallback.")
 
-    def generate_matrix_v7(self) -> List[Dict]:
+    def generate_matrix(self) -> List[Dict]:
         self.fetch_indicator("NY.GDP.MKTP.CD", "GDP_USD")
         self.fetch_indicator("SP.POP.TOTL", "Population")
         self.fetch_indicator("SI.POV.GINI", "Gini")
@@ -79,9 +75,6 @@ class AbsoluteMacroeconomicEngine:
         self.fetch_indicator("SP.POP.DPND.OL", "OldAge_Dep_Pct")
 
         processed = []
-        logger.info("[KERNEL] Computing V7.0 Absolute Engine across all sovereign nodes...")
-
-        # Process satellite batch
         sample_batch = [{"ISO3": k, "Population": v.get("Population", 10e6), "gross_domestic_product_usd": v.get("GDP_USD", 1e11)} for k, v in self.raw_data.items()]
         sat_results = self.sat_engine.process_telemetry_batch(sample_batch)
 
@@ -91,67 +84,57 @@ class AbsoluteMacroeconomicEngine:
             if y_gross <= 0 or pop <= 0: continue
             
             gdp_pc = y_gross / pop
-            
-            # Satellite telemetry factors
             sat_data = sat_results.get(iso, {"satellite_radiance_factor": 1.0, "satellite_smog_drag_usd": 0.0})
             radiance_mult = sat_data["satellite_radiance_factor"]
             sat_smog = sat_data["satellite_smog_drag_usd"]
 
-            # 1. Non-Linear EROI Net Energy Cliff
-            energy_imports_pct = float(data.get("Energy_Imports_Pct", 50.0))
-            eroi = 20.0 - (energy_imports_pct / 100.0) * (15.0 if energy_imports_pct >= 0 else 5.0)
-            eroi = max(1.5, eroi)
-            phi_eroi = (1.0 - (1.0 / eroi)) * radiance_mult
-            thermodynamic_gdp = y_gross * phi_eroi
+            # General NDV Component Calculations
+            energy_imports = float(data.get("Energy_Imports_Pct", 50.0))
+            eroi = max(1.5, 20.0 - (energy_imports / 100.0) * (15.0 if energy_imports >= 0 else 5.0))
+            thermo_gdp = y_gross * (1.0 - (1.0 / eroi)) * radiance_mult
 
-            # 2. Depreciation & Ecosystem
             dp = y_gross * 0.04
             forest_ha = float(data.get("Forest_SqKm", 1000.0)) * 100.0
             dn = (forest_ha * 0.05) * 15000.0
-
-            # 3. Cognitive & Biological Maintenance
-            internet_pct = float(data.get("Internet_Users_Pct", 85.0))
-            dc = pop * (internet_pct / 100.0) * 4380.0
+            dc = pop * (float(data.get("Internet_Users_Pct", 85.0)) / 100.0) * 4380.0
             
             pm25 = float(data.get("PM25", 15.0))
-            smog_debt = max(0, (pm25 - 5.0) * 800 * (pop / 1000.0)) + sat_smog
+            smog = max(0, (pm25 - 5.0) * 800 * (pop / 1000.0)) + sat_smog
             gini = float(data.get("Gini", 35.0)) / 100.0 if data.get("Gini") else 0.38
             gini_drag = max(0, (gini - 0.35) * y_gross * 0.25)
-            e_minus = smog_debt + gini_drag
+            e_minus = smog + gini_drag
 
-            health_exp_pct = float(data.get("Health_Exp_Pct", 8.0))
-            dm_raw = (y_gross * (health_exp_pct / 100.0) * 1.20) + (pop * 750.0 * (1.0 + (gdp_pc / 80000.0)))
-            dm = max(dm_raw * 0.20, dm_raw - (0.15 * smog_debt))
+            health_exp = float(data.get("Health_Exp_Pct", 8.0))
+            dm_raw = (y_gross * (health_exp / 100.0) * 1.20) + (pop * 750.0 * (1.0 + (gdp_pc / 80000.0)))
+            dm = max(dm_raw * 0.20, dm_raw - (0.15 * smog))
 
-            # 4. Epistemic & Social Capital Decay (Ds)
-            rd_exp_pct = float(data.get("RD_Exp_Pct", 1.5))
-            de = max(0.0, (y_gross * 0.05) - (y_gross * (rd_exp_pct / 100.0) * 2.0))
+            de = max(0.0, (y_gross * 0.05) - (y_gross * (float(data.get("RD_Exp_Pct", 1.5)) / 100.0) * 2.0))
+            ds = y_gross * (1.0 - float(data.get("Trust_Index", 0.55))) * 0.04
+            dai = y_gross * float(data.get("AI_Compute_Pct", 0.02)) * 1.35
             
-            trust_index = float(data.get("Trust_Index", 0.55))
-            ds = y_gross * (1.0 - trust_index) * 0.04
-
-            # 5. NEW PILLAR: AI & Compute Obsolescence Drag (Dai)
-            ai_compute_pct = float(data.get("AI_Compute_Pct", 0.02))
-            dai = y_gross * ai_compute_pct * 1.35  # compute energy intensity + model collapse factor
-
-            # 6. NEW PILLAR: Demographic Inverted Drag (Ddemo)
             oldage_dep = float(data.get("OldAge_Dep_Pct", 25.0))
-            ddemo = 0.0
-            if oldage_dep > 30.0:
-                ddemo = y_gross * ((oldage_dep - 30.0) / 100.0) * 0.75
+            ddemo = max(0.0, y_gross * ((oldage_dep - 30.0) / 100.0) * 0.75) if oldage_dep > 30.0 else 0.0
 
-            # 7. Dividends, FIRE, & Leontief MRIO Offshored Entropy
             e_plus = (pop * 800.0) * ((gdp_pc / 2080.0) * 0.40)
-            fire_friction = y_gross * float(data.get("Fire_Pct", 0.055))
+            fire = y_gross * float(data.get("Fire_Pct", 0.055))
+            net_imp = float(data.get("Imports_Pct", 40.0)) - float(data.get("Exports_Pct", 40.0))
+            e_offshore = max(0.0, y_gross * (net_imp / 100.0) * 0.08 * (1.0 + (gdp_pc / 60000.0)))
+
+            # GENERAL NDV (USD)
+            general_ndv = thermo_gdp - (dp + dn + dc + dm + de + ds + dai + ddemo) + e_plus - (e_minus + fire + e_offshore)
+            general_ratio = (general_ndv / y_gross) * 100.0 if y_gross > 0 else 0.0
+
+            # SPECIAL NDV (Quantum Von Neumann Density Score & Caputo Memory)
+            # Von Neumann Entanglement Entropy: S(rho) = - p log(p)
+            norm_ratio = max(0.01, min(0.99, abs(general_ratio) / 200.0))
+            von_neumann_entropy = - (norm_ratio * math.log(norm_ratio))
             
-            net_imports = float(data.get("Imports_Pct", 40.0)) - float(data.get("Exports_Pct", 40.0))
-            e_offshore = max(0.0, y_gross * (net_imports / 100.0) * 0.08 * (1.0 + (gdp_pc / 60000.0)))
+            # Caputo Fractional Memory multiplier (alpha = 0.85 memory retention)
+            caputo_memory_factor = 0.85 + 0.15 * (float(data.get("RD_Exp_Pct", 1.5)) / 5.0)
+            
+            special_quantum_score = general_ndv * (1.0 - 0.10 * von_neumann_entropy) * caputo_memory_factor
 
-            # Archetype
             archetype = "Industrial" if (forest_ha / pop) < 0.25 else "Natural"
-
-            # V7.0 MASTER Omni-Equation
-            ndv_v7 = thermodynamic_gdp - (dp + dn + dc + dm + de + ds + dai + ddemo) + e_plus - (e_minus + fire_friction + e_offshore)
 
             processed.append({
                 "Country_Name": data["Country_Name"],
@@ -159,7 +142,7 @@ class AbsoluteMacroeconomicEngine:
                 "Population": pop,
                 "Gini": round(gini, 3),
                 "gross_domestic_product_usd": round(y_gross, 2),
-                "thermodynamic_gdp_usd": round(thermodynamic_gdp, 2),
+                "thermodynamic_gdp_usd": round(thermo_gdp, 2),
                 "physical_depreciation_usd": round(dp, 2),
                 "natural_depletion_usd": round(dn, 2),
                 "cognitive_depletion_usd": round(dc, 2),
@@ -169,37 +152,24 @@ class AbsoluteMacroeconomicEngine:
                 "ai_compute_obsolescence_usd": round(dai, 2),
                 "demographic_drag_usd": round(ddemo, 2),
                 "care_economy_dividend_usd": round(e_plus, 2),
-                "smog_friction_penalty_usd": round(smog_debt, 2),
+                "smog_friction_penalty_usd": round(smog, 2),
                 "gini_friction_penalty_usd": round(gini_drag, 2),
-                "financialization_friction_usd": round(fire_friction, 2),
+                "financialization_friction_usd": round(fire, 2),
                 "offshored_entropy_debt_usd": round(e_offshore, 2),
-                "net_domestic_value_usd": round(ndv_v7, 2),
+                "general_ndv_usd": round(general_ndv, 2),
+                "special_ndv_quantum_score": round(special_quantum_score, 2),
+                "net_domestic_value_usd": round(general_ndv, 2),
                 "cohesion_archetype": archetype,
                 "equilibrium_transfer_usd": 0.0,
-                "ndv_to_gdp_ratio": 0.0
+                "ndv_to_gdp_ratio": round(general_ratio, 2)
             })
 
-        # Cohesion pool
-        total_tax_pool = sum(abs(r["natural_depletion_usd"]) for r in processed if r["cohesion_archetype"] == "Industrial") * 0.10
-        natural_sinks = sum(1 for r in processed if r["cohesion_archetype"] == "Natural")
-
-        for r in processed:
-            if r["cohesion_archetype"] == "Industrial":
-                tax = abs(r["natural_depletion_usd"]) * 0.10
-                r["net_domestic_value_usd"] -= tax
-                r["equilibrium_transfer_usd"] = -tax
-            else:
-                payout = (total_tax_pool / natural_sinks) if natural_sinks > 0 else 0.0
-                r["net_domestic_value_usd"] += payout
-                r["equilibrium_transfer_usd"] = payout
-            r["ndv_to_gdp_ratio"] = round(r["net_domestic_value_usd"] / r["gross_domestic_product_usd"], 3) if r["gross_domestic_product_usd"] > 0 else 0.0
-
-        processed.sort(key=lambda x: x["net_domestic_value_usd"], reverse=True)
+        processed.sort(key=lambda x: x["general_ndv_usd"], reverse=True)
         return processed
 
 if __name__ == "__main__":
-    engine = AbsoluteMacroeconomicEngine()
-    final_ledger = engine.generate_matrix_v7()
+    engine = DualNDVEngine()
+    final_ledger = engine.generate_matrix()
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'global_sovereign_ledger.csv')
     if final_ledger:
         keys = final_ledger[0].keys()
@@ -207,4 +177,4 @@ if __name__ == "__main__":
             writer = csv.DictWriter(f, fieldnames=keys)
             writer.writeheader()
             writer.writerows(final_ledger)
-        logger.info(f"[SUCCESS] V7.0 Absolute Sovereign Ledger generated with {len(final_ledger)} nations at {output_path}")
+        logger.info(f"[SUCCESS] Dual General/Special NDV Ledger generated with {len(final_ledger)} nations at {output_path}")
